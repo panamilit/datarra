@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datarra — Dashboard</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <style>
+    /* Page-specific */
+    .hotkeys-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--sp-sm);
+    }
+    .hotkey-item {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-md);
+      padding: 10px 14px;
+      border-radius: var(--r-md);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--clr-border);
+      transition: all var(--dur-mid) var(--ease-out);
+      cursor: pointer;
+    }
+    .hotkey-item:hover {
+      background: rgba(180,48,72,0.08);
+      border-color: var(--clr-border-hi);
+    }
+    .hotkey-key {
+      background: var(--clr-raised);
+      border: 1px solid var(--clr-border-hi);
+      border-radius: var(--r-sm);
+      padding: 2px 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--clr-spark);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .hotkey-label { font-size: 13px; color: var(--clr-text-dim); }
+
+    .tool-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-sm);
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(180,48,72,0.08);
+    }
+    .tool-row:last-child { border-bottom: none; }
+    .tool-dot {
+      width: 6px; height: 6px;
+      border-radius: var(--r-full);
+      background: var(--clr-cherry);
+      flex-shrink: 0;
+    }
+    .tool-name { font-size: 13px; color: var(--clr-text); flex: 1; }
+    .tool-count { font-family: var(--font-mono); font-size: 12px; color: var(--clr-text-dim); }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark"><img src="../assets/logo.png" alt="Description of the image" width="50" height="50"></div>
+      <span class="logo-text">Datarra</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Workspace</span>
+
+      <a href="index.html" class="nav-link active">
+        <span class="nav-icon">⬡</span> Dashboard
+      </a>
+      <a href="analysis.html" class="nav-link">
+        <span class="nav-icon">◈</span> Analysis
+        <span class="nav-badge">New</span>
+      </a>
+      <a href="history.html" class="nav-link">
+        <span class="nav-icon">◷</span> History
+      </a>
+
+      <span class="nav-section-label">Tools</span>
+
+      <a href="#" class="nav-link">
+        <span class="nav-icon">⊕</span> Datasets
+      </a>
+      <a href="#" class="nav-link">
+        <span class="nav-icon">◎</span> Models
+      </a>
+      <a href="#" class="nav-link">
+        <span class="nav-icon">⊞</span> Reports
+      </a>
+
+      <span class="nav-section-label">Account</span>
+
+      <a href="#" class="nav-link">
+        <span class="nav-icon">◈</span> Settings
+      </a>
+      <a href="#" class="nav-link">
+        <span class="nav-icon">⊙</span> API Keys
+      </a>
+      <a href="admin.html" class="nav-link">
+        <span class="nav-icon">♛</span> Admin
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">MM</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Max Makarov</div>
+          <div class="sidebar-user-role">Admin</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">Dashboard</span>
+        <span class="topbar-sub">Welcome back — your data awaits</span>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" onclick="window.location.href='history.html'">⊞ Reports</button>
+        <button class="topbar-btn btn-primary" onclick="window.location.href='analysis.html'">＋ New Analysis</button>
+      </div>
+    </div>
+
+    <!-- PAGE CONTENT -->
+    <div class="page-content">
+
+      <!-- PROFILE HERO -->
+      <div class="profile-hero animate-up">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar">MM</div>
+          <div class="profile-status"></div>
+        </div>
+        <div class="profile-info">
+          <div class="hero-tag">Admin status</div>
+          <h1 class="profile-name">Max Makarov</h1>
+          <p class="profile-bio">
+            Transforming raw data into decisions. Specialising in exploratory analysis, ML pipelines, and building systems that scale — one dataset at a time.
+          </p>
+          <div class="profile-actions">
+            <button class="btn btn-solid btn-sm" onclick="window.location.href='analysis.html'">◈ Open Workspace</button>
+            <button class="btn btn-outline btn-sm">Edit Profile</button>
+          </div>
+        </div>
+
+        <!-- Decorative sparkline -->
+        <div style="margin-left:auto;opacity:0.5;z-index:1;">
+          <svg width="120" height="60" viewBox="0 0 120 60" fill="none">
+            <polyline points="0,50 20,38 40,42 60,22 80,28 100,10 120,18" stroke="#d94060" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="0,50 20,38 40,42 60,22 80,28 100,10 120,18" stroke="url(#sg)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+            <circle cx="100" cy="10" r="4" fill="#d94060"/>
+            <defs>
+              <linearGradient id="sg" x1="0" y1="0" x2="120" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#8b2235"/>
+                <stop offset="100%" stop-color="#d94060"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--clr-text-ghost);text-align:center;margin-top:4px;">activity / 7d</div>
+        </div>
+      </div>
+
+      <!-- STATS GRID -->
+      <div class="stats-grid animate-up animate-up-1">
+        <div class="stat-card">
+          <span class="stat-icon">◈</span>
+          <div class="stat-value" id="stat-datasets">0</div>
+          <div class="stat-label">Datasets Analyzed</div>
+          <div class="stat-change">↑ 12% this month</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">⊞</span>
+          <div class="stat-value" id="stat-reports">0</div>
+          <div class="stat-label">Total Reports</div>
+          <div class="stat-change">↑ 5 this week</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">⊙</span>
+          <div class="stat-value" id="stat-sessions">0</div>
+          <div class="stat-label">AI Sessions</div>
+          <div class="stat-change">↑ 34% vs last month</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">◷</span>
+          <div class="stat-value" style="-webkit-text-fill-color:var(--clr-text);font-size:18px;margin-top:8px;">2h ago</div>
+          <div class="stat-label">Last Activity</div>
+          <div class="stat-change" style="color:var(--clr-info);">⊙ Sales_Q4.csv</div>
+        </div>
+      </div>
+
+      <!-- MIDDLE ROW -->
+      <div class="grid-2 animate-up animate-up-2">
+
+        <!-- RECENT ACTIVITY -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Recent Activity</h2>
+            <a href="history.html" class="section-link">View all →</a>
+          </div>
+          <div class="activity-list">
+            <div class="activity-item">
+              <div class="activity-dot dot-green"></div>
+              <div class="activity-content">
+                <div class="activity-title">EDA completed on <strong>churn_model_v3.csv</strong></div>
+                <div class="activity-meta">Outliers detected · 3 null columns flagged</div>
+              </div>
+              <span class="activity-time">2h ago</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot dot-blue"></div>
+              <div class="activity-content">
+                <div class="activity-title">AI session — <strong>Correlation deep-dive</strong></div>
+                <div class="activity-meta">14 messages · Summary saved</div>
+              </div>
+              <span class="activity-time">5h ago</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot dot-red"></div>
+              <div class="activity-content">
+                <div class="activity-title">Missing values in <strong>sales_q4.csv</strong></div>
+                <div class="activity-meta">7.2% of rows affected · Action required</div>
+              </div>
+              <span class="activity-time">1d ago</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot dot-warn"></div>
+              <div class="activity-content">
+                <div class="activity-title">Report exported — <strong>User Retention 2024</strong></div>
+                <div class="activity-meta">PDF · 14 pages · Shared with team</div>
+              </div>
+              <span class="activity-time">2d ago</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot dot-green"></div>
+              <div class="activity-content">
+                <div class="activity-title">Dataset uploaded — <strong>product_events.parquet</strong></div>
+                <div class="activity-meta">82,441 rows · 24 columns · 11.4 MB</div>
+              </div>
+              <span class="activity-time">3d ago</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div style="display:flex;flex-direction:column;gap:var(--sp-lg);">
+
+          <!-- QUICK ACTIONS -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Quick Actions</h2>
+            </div>
+            <div class="quick-actions-grid">
+              <a href="analysis.html" class="quick-action">
+                <div class="qa-icon">⬆</div>
+                <div class="qa-title">Upload Dataset</div>
+                <div class="qa-desc">CSV, XLSX, Parquet, JSON</div>
+              </a>
+              <a href="analysis.html" class="quick-action">
+                <div class="qa-icon">◈</div>
+                <div class="qa-title">New Analysis</div>
+                <div class="qa-desc">Start AI-powered EDA</div>
+              </a>
+              <a href="history.html" class="quick-action">
+                <div class="qa-icon">◷</div>
+                <div class="qa-title">View History</div>
+                <div class="qa-desc">Past sessions & reports</div>
+              </a>
+              <a href="#" class="quick-action">
+                <div class="qa-icon">⊞</div>
+                <div class="qa-title">Export Report</div>
+                <div class="qa-desc">PDF or CSV output</div>
+              </a>
+            </div>
+          </div>
+
+          <!-- FAVORITE TOOLS -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Top Tools Used</h2>
+              <span class="card-badge">This month</span>
+            </div>
+            <div>
+              <div class="tool-row">
+                <div class="tool-dot" style="background:var(--clr-cherry)"></div>
+                <span class="tool-name">Exploratory Data Analysis</span>
+                <span class="tool-count">31×</span>
+              </div>
+              <div class="tool-row">
+                <div class="tool-dot" style="background:var(--clr-info)"></div>
+                <span class="tool-name">Missing Value Detection</span>
+                <span class="tool-count">24×</span>
+              </div>
+              <div class="tool-row">
+                <div class="tool-dot" style="background:var(--clr-success)"></div>
+                <span class="tool-name">Outlier Analysis</span>
+                <span class="tool-count">19×</span>
+              </div>
+              <div class="tool-row">
+                <div class="tool-dot" style="background:var(--clr-warn)"></div>
+                <span class="tool-name">Correlation Overview</span>
+                <span class="tool-count">12×</span>
+              </div>
+              <div class="tool-row">
+                <div class="tool-dot" style="background:var(--clr-spark)"></div>
+                <span class="tool-name">Summary Statistics</span>
+                <span class="tool-count">8×</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- KEYBOARD SHORTCUTS -->
+      <div class="card animate-up animate-up-3">
+        <div class="card-header">
+          <h2 class="card-title">Keyboard Shortcuts</h2>
+          <span class="card-badge">Power User</span>
+        </div>
+        <div class="hotkeys-grid">
+          <div class="hotkey-item"><span class="hotkey-key">⌘ N</span><span class="hotkey-label">New analysis session</span></div>
+          <div class="hotkey-item"><span class="hotkey-key">⌘ U</span><span class="hotkey-label">Upload dataset</span></div>
+          <div class="hotkey-item"><span class="hotkey-key">⌘ E</span><span class="hotkey-label">Run EDA on active dataset</span></div>
+          <div class="hotkey-item"><span class="hotkey-key">⌘ H</span><span class="hotkey-label">Open history</span></div>
+          <div class="hotkey-item"><span class="hotkey-key">⌘ K</span><span class="hotkey-label">Command palette</span></div>
+          <div class="hotkey-item"><span class="hotkey-key">⌘ /</span><span class="hotkey-label">Focus AI chat</span></div>
+          <div class="hotkey-item"><span class="hotkey-key">⌘ R</span><span class="hotkey-label">Re-run last analysis</span></div>
+          <div class="hotkey-item"><span class="hotkey-key">⌘ P</span><span class="hotkey-label">Export report as PDF</span></div>
+        </div>
+      </div>
+
+    </div><!-- .page-content -->
+  </main>
+
+</div><!-- .app-shell -->
+
+<script src="../js/script.js"></script>
+<script>
+  // Animate stat counters on load
+  const targets = { 'stat-datasets': 47, 'stat-reports': 128, 'stat-sessions': 93 };
+  Object.entries(targets).forEach(([id, target]) => {
+    animateCounter(document.getElementById(id), target, 1200);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datarra — Admin Panel</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .admin-overview {
+      display: grid;
+      gap: var(--sp-lg);
+    }
+
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--sp-md);
+    }
+
+    .service-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-md);
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(180,48,72,0.08);
+    }
+    .service-row:last-child { border-bottom: none; }
+
+    .service-name {
+      font-size: 13px;
+      color: var(--clr-text);
+      font-weight: 500;
+    }
+    .service-status {
+      font-size: 12px;
+      color: var(--clr-text-dim);
+      white-space: nowrap;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--sp-sm);
+      font-size: 12px;
+      color: var(--clr-text-dim);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-small {
+      height: 8px;
+      border-radius: var(--r-full);
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+    }
+    .progress-fill-small {
+      height: 100%;
+      background: var(--clr-cherry);
+      width: 0;
+      transition: width 0.5s var(--ease-out);
+    }
+
+    .audit-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-sm);
+    }
+    .audit-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid transparent;
+      border-radius: var(--r-md);
+      padding: var(--sp-md);
+      transition: all var(--dur-mid) var(--ease-out);
+    }
+    .audit-item:hover {
+      background: rgba(180,48,72,0.08);
+      border-color: var(--clr-border);
+    }
+
+    .audit-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--clr-text);
+      margin-bottom: 6px;
+    }
+    .audit-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-sm);
+      font-size: 12px;
+      color: var(--clr-text-dim);
+    }
+    .audit-time {
+      font-family: var(--font-mono);
+      color: var(--clr-text-ghost);
+    }
+
+    .table-row-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--clr-text-dim);
+      margin-top: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .admin-stats { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark"><img src="../assets/logo.png" alt="Description of the image" width="50" height="50"></div>
+      <span class="logo-text">Datarra</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Workspace</span>
+
+      <a href="index.html" class="nav-link">
+        <span class="nav-icon">⬡</span> Dashboard
+      </a>
+      <a href="analysis.html" class="nav-link">
+        <span class="nav-icon">◈</span> Analysis
+        <span class="nav-badge">New</span>
+      </a>
+      <a href="history.html" class="nav-link">
+        <span class="nav-icon">◷</span> History
+      </a>
+      <a href="admin.html" class="nav-link active">
+        <span class="nav-icon">♛</span> Admin
+      </a>
+
+      <span class="nav-section-label">Tools</span>
+
+      <a href="#" class="nav-link">
+        <span class="nav-icon">⊕</span> Datasets
+      </a>
+      <a href="#" class="nav-link">
+        <span class="nav-icon">◎</span> Models
+      </a>
+      <a href="#" class="nav-link">
+        <span class="nav-icon">⊞</span> Reports
+      </a>
+
+      <span class="nav-section-label">Account</span>
+
+      <a href="#" class="nav-link">
+        <span class="nav-icon">◈</span> Settings
+      </a>
+      <a href="#" class="nav-link">
+        <span class="nav-icon">⊙</span> API Keys
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">MM</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Max Makarov</div>
+          <div class="sidebar-user-role">Administrator</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">Admin Panel</span>
+        <span class="topbar-sub">Manage users, system health, and audit activity</span>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" onclick="window.location.href='history.html'">⊞ Audit Logs</button>
+        <button class="topbar-btn btn-primary" onclick="window.location.href='analysis.html'">＋ New Analysis</button>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="admin-overview">
+        <div class="admin-stats animate-up">
+          <div class="stat-card">
+            <span class="stat-icon">👥</span>
+            <div class="stat-value">28</div>
+            <div class="stat-label">Active Team Members</div>
+            <div class="stat-change">↑ 2 since yesterday</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">🔐</span>
+            <div class="stat-value">5</div>
+            <div class="stat-label">Pending Invites</div>
+            <div class="stat-change">3 accepted this week</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">⚙️</span>
+            <div class="stat-value">99.7%</div>
+            <div class="stat-label">System Uptime</div>
+            <div class="stat-change" style="color:var(--clr-info);">Stable</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">🚨</span>
+            <div class="stat-value">2</div>
+            <div class="stat-label">Open Alerts</div>
+            <div class="stat-change" style="color:var(--clr-warn);">Review required</div>
+          </div>
+        </div>
+
+        <div class="grid-2 animate-up animate-up-1">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">User Access</h2>
+              <a href="#" class="section-link">Manage roles →</a>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Max Makarov</td>
+                  <td>Owner</td>
+                  <td><span class="chip chip-success">Active</span></td>
+                </tr>
+                <tr>
+                  <td>Alex Kim</td>
+                  <td>Data Explorer</td>
+                  <td><span class="chip chip-info">Pending</span></td>
+                </tr>
+                <tr>
+                  <td>Priya Shah</td>
+                  <td>Analyst</td>
+                  <td><span class="chip chip-success">Active</span></td>
+                </tr>
+                <tr>
+                  <td>Jae Park</td>
+                  <td>ML Engineer</td>
+                  <td><span class="chip chip-warn">SAML issue</span></td>
+                </tr>
+                <tr>
+                  <td>Leila Gomez</td>
+                  <td>Product</td>
+                  <td><span class="chip chip-info">Invite sent</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">System Health</h2>
+              <span class="card-badge">Overview</span>
+            </div>
+            <div class="service-row">
+              <div>
+                <div class="service-name">API Gateway</div>
+                <div class="service-status">Response 132ms</div>
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <div class="progress-label"><span>Performance</span><span>96%</span></div>
+                <div class="progress-bar-small"><div class="progress-fill-small" style="width:96%"></div></div>
+              </div>
+            </div>
+            <div class="service-row">
+              <div>
+                <div class="service-name">Data Ingestion</div>
+                <div class="service-status">Batch queue healthy</div>
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <div class="progress-label"><span>Throughput</span><span>92%</span></div>
+                <div class="progress-bar-small"><div class="progress-fill-small" style="width:92%"></div></div>
+              </div>
+            </div>
+            <div class="service-row">
+              <div>
+                <div class="service-name">AI Model API</div>
+                <div class="service-status">Serving 14 req/s</div>
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <div class="progress-label"><span>Availability</span><span>99%</span></div>
+                <div class="progress-bar-small"><div class="progress-fill-small" style="width:99%"></div></div>
+              </div>
+            </div>
+            <div class="service-row">
+              <div>
+                <div class="service-name">Auth / SSO</div>
+                <div class="service-status">2 sign-in failures</div>
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <div class="progress-label"><span>Integrity</span><span>88%</span></div>
+                <div class="progress-bar-small"><div class="progress-fill-small" style="width:88%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card animate-up animate-up-2">
+          <div class="card-header">
+            <h2 class="card-title">Recent Audit Activity</h2>
+            <a href="#" class="section-link">View full log →</a>
+          </div>
+          <div class="audit-list">
+            <div class="audit-item">
+              <div class="audit-title">Access granted to Priya Shah</div>
+              <div class="audit-meta"><span>Role updated: Analyst</span><span class="audit-time">1h ago</span></div>
+            </div>
+            <div class="audit-item">
+              <div class="audit-title">SAML session reauthenticated</div>
+              <div class="audit-meta"><span>Jae Park</span><span class="audit-time">3h ago</span></div>
+            </div>
+            <div class="audit-item">
+              <div class="audit-title">API key rotated</div>
+              <div class="audit-meta"><span>Service account: ingestion-bot</span><span class="audit-time">9h ago</span></div>
+            </div>
+            <div class="audit-item">
+              <div class="audit-title">Dataset retention policy updated</div>
+              <div class="audit-meta"><span>Retention 180 → 365 days</span><span class="audit-time">Yesterday</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="../js/script.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    requireAdminAuth();
+  });
+</script>
+</body>
+</html>

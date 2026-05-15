@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataBerry — History</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .history-layout {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-lg);
+    }
+
+    /* Summary row */
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--sp-md);
+    }
+
+    .summary-card {
+      background: var(--grad-card);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--r-lg);
+      padding: var(--sp-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-md);
+      transition: all var(--dur-mid) var(--ease-out);
+    }
+
+    .summary-card:hover {
+      border-color: var(--clr-border-hi);
+      box-shadow: var(--sh-hover);
+    }
+
+    .sc-icon {
+      width: 48px; height: 48px;
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .sc-icon-1 { background: rgba(180,48,72,0.15); border: 1px solid var(--clr-border-hi); }
+    .sc-icon-2 { background: rgba(96,152,212,0.15); border: 1px solid rgba(96,152,212,0.3); }
+    .sc-icon-3 { background: rgba(76,175,130,0.15); border: 1px solid rgba(76,175,130,0.3); }
+
+    .sc-content {}
+    .sc-value {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 24px;
+      line-height: 1.1;
+    }
+    .sc-label { font-size: 12px; color: var(--clr-text-dim); }
+
+    /* Toolbar */
+    .history-toolbar {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-md);
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--clr-text-ghost);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .search-input {
+      padding-left: 36px;
+    }
+
+    .filter-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--clr-glass);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--r-md);
+      color: var(--clr-text-dim);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all var(--dur-mid) var(--ease-out);
+      font-family: var(--font-body);
+      white-space: nowrap;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      color: var(--clr-text);
+      background: rgba(180,48,72,0.1);
+      border-color: var(--clr-border-hi);
+    }
+
+    .filter-btn.active {
+      color: var(--clr-spark);
+    }
+
+    /* History list */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-sm);
+    }
+
+    .history-card {
+      background: var(--grad-card);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--r-lg);
+      padding: var(--sp-lg);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: var(--sp-lg);
+      align-items: center;
+      transition: all var(--dur-mid) var(--ease-out);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .history-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,128,150,0.2), transparent);
+    }
+
+    .history-card:hover {
+      border-color: var(--clr-border-hi);
+      box-shadow: var(--sh-hover);
+      transform: translateX(2px);
+    }
+
+    .history-card.deleting {
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.3s var(--ease-in);
+      pointer-events: none;
+    }
+
+    .hc-type-icon {
+      width: 44px; height: 44px;
+      border-radius: var(--r-md);
+      background: rgba(180,48,72,0.12);
+      border: 1px solid var(--clr-border-hi);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .hc-main {}
+    .hc-name {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 4px;
+      color: var(--clr-text);
+    }
+
+    .hc-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-md);
+      flex-wrap: wrap;
+    }
+
+    .hc-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--clr-text-dim);
+    }
+
+    .hc-summary {
+      font-size: 13px;
+      color: var(--clr-text-dim);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .hc-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-xs);
+      flex-shrink: 0;
+    }
+
+    /* Empty history */
+    .empty-history {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--sp-2xl);
+      gap: var(--sp-md);
+      text-align: center;
+      opacity: 0.5;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: var(--sp-lg);
+      right: var(--sp-lg);
+      background: var(--clr-raised);
+      border: 1px solid var(--clr-border-hi);
+      border-radius: var(--r-md);
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--clr-text);
+      z-index: 1000;
+      animation: slide-up 0.3s var(--ease-out) both;
+      display: flex;
+      align-items: center;
+      gap: var(--sp-sm);
+      box-shadow: var(--sh-hover);
+    }
+
+    .toast.hide {
+      animation: fade-out 0.3s var(--ease-in) both;
+    }
+
+    @keyframes fade-out {
+      to { opacity: 0; transform: translateY(8px); }
+    }
+
+    @media (max-width: 700px) {
+      .summary-row { grid-template-columns: 1fr; }
+      .history-card { grid-template-columns: 1fr; }
+      .hc-type-icon { display: none; }
+      .hc-actions { flex-direction: row; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark"><img src="../assets/logo.png" alt="Description of the image" width="50" height="50"></div>
+      <span class="logo-text">Datarra</span>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Workspace</span>
+      <a href="index.html" class="nav-link"><span class="nav-icon">⬡</span> Dashboard</a>
+      <a href="analysis.html" class="nav-link"><span class="nav-icon">◈</span> Analysis <span class="nav-badge">New</span></a>
+      <a href="history.html" class="nav-link active"><span class="nav-icon">◷</span> History</a>
+      <a href="admin.html" class="nav-link"><span class="nav-icon">♛</span> Admin</a>
+      <span class="nav-section-label">Tools</span>
+      <a href="#" class="nav-link"><span class="nav-icon">⊕</span> Datasets</a>
+      <a href="#" class="nav-link"><span class="nav-icon">◎</span> Models</a>
+      <a href="#" class="nav-link"><span class="nav-icon">⊞</span> Reports</a>
+      <span class="nav-section-label">Account</span>
+      <a href="#" class="nav-link"><span class="nav-icon">◈</span> Settings</a>
+      <a href="#" class="nav-link"><span class="nav-icon">⊙</span> API Keys</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">AK</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Alex Kim</div>
+          <div class="sidebar-user-role">Data Explorer</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">Analysis History</span>
+        <span class="topbar-sub">All past sessions and reports</span>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" onclick="exportHistory()">⊞ Export</button>
+        <button class="topbar-btn btn-primary" onclick="window.location.href='analysis.html'">＋ New Analysis</button>
+      </div>
+    </div>
+
+    <div class="page-content history-layout">
+
+      <!-- SUMMARY CARDS -->
+      <div class="summary-row animate-up">
+        <div class="summary-card">
+          <div class="sc-icon sc-icon-1">◷</div>
+          <div class="sc-content">
+            <div class="sc-value" id="total-count">47</div>
+            <div class="sc-label">Total Analyses</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon sc-icon-2">◈</div>
+          <div class="sc-content">
+            <div class="sc-value">EDA</div>
+            <div class="sc-label">Most Used Tool</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon sc-icon-3">⊕</div>
+          <div class="sc-content">
+            <div class="sc-value" style="font-size:15px" class="mono">churn_v3.csv</div>
+            <div class="sc-label">Last Dataset</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOOLBAR -->
+      <div class="history-toolbar animate-up animate-up-1">
+        <div class="search-wrap">
+          <span class="search-icon">⊙</span>
+          <input class="input search-input" type="text" placeholder="Search by name, type or dataset…" id="search-input" oninput="filterHistory()" />
+        </div>
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+        <button class="filter-btn" data-filter="csv" onclick="setFilter('csv', this)">CSV</button>
+        <button class="filter-btn" data-filter="xlsx" onclick="setFilter('xlsx', this)">XLSX</button>
+        <button class="filter-btn" data-filter="json" onclick="setFilter('json', this)">JSON</button>
+      </div>
+
+      <!-- HISTORY LIST -->
+      <div class="history-list animate-up animate-up-2" id="history-list">
+        <!-- Populated by JS -->
+      </div>
+
+    </div><!-- .page-content -->
+  </main>
+
+</div>
+
+<script src="../js/script.js"></script>
+<script>
+ 
+  const API_BASE_URL = "http://127.0.0.1:8000";
+
+  async function loadHistory() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/datasets`);
+
+      if (!response.ok) {
+        throw new Error("Failed to load datasets");
+      }
+
+      const datasets = await response.json();
+
+      historyData = datasets.map(item => ({
+        id: item.file_id,
+        dataset: item.original_name,
+        type: item.file_type,
+        typeLabel: item.file_type.toUpperCase(),
+        icon: getFileIcon(item.file_type),
+        date: new Date(item.uploaded_at).toLocaleDateString(),
+        time: new Date(item.uploaded_at).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit"
+        }),
+        rows: item.row_count || 0,
+        cols: item.column_count || 0,
+        status: "complete",
+        summary: `${item.file_type.toUpperCase()} dataset with ${item.row_count} rows and ${item.column_count} columns.`,
+      }));
+
+      updateSummaryCards();
+
+      renderHistory();
+    } catch (error) {
+      console.error(error);
+      showToast("Failed to load history");
+    }
+  }
+
+  function getFileIcon(fileType) {
+    const icons = {
+      csv: "⊞",
+      xlsx: "◈",
+      json: "◎"
+    };
+
+    return icons[fileType] || "⊕";
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const STATUS_ICONS = {
+    complete: { chip: 'chip-success', label: '✓ Complete' },
+    warning:  { chip: 'chip-warn',    label: '⚠ Warning' },
+    error:    { chip: 'chip-cherry',  label: '✗ Error' },
+  };
+
+  const TYPE_ICONS = {
+    eda:         '◈',
+    outliers:    '⊙',
+    missing:     '⊘',
+    stats:       '⊞',
+    correlation: '⊗',
+    dtypes:      '◎',
+  };
+
+  let currentFilter = 'all';
+  let currentSearch = '';
+  let historyData = [];
+
+  function renderHistory() {
+    const list = document.getElementById('history-list');
+    const filtered = historyData.filter(item => {
+      const matchFilter = currentFilter === 'all' || item.type === currentFilter;
+      const q = currentSearch.toLowerCase();
+      const matchSearch = !q ||
+        item.dataset.toLowerCase().includes(q) ||
+        item.typeLabel.toLowerCase().includes(q) ||
+        item.summary.toLowerCase().includes(q);
+      return matchFilter && matchSearch;
+    });
+
+    document.getElementById('total-count').textContent = filtered.length;
+
+    if (filtered.length === 0) {
+      list.innerHTML = `
+        <div class="empty-history">
+          <div style="font-size:48px;opacity:0.3">◷</div>
+          <div style="font-family:var(--font-display);font-size:18px;font-weight:600">No results found</div>
+          <div style="font-size:13px;color:var(--clr-text-dim)">Try adjusting your search or filters</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map((item, idx) => {
+      const st = STATUS_ICONS[item.status] || STATUS_ICONS.complete;
+      return `
+        <div class="history-card" id="hc-${item.id}" style="animation: slide-up ${0.3 + idx*0.04}s var(--ease-out) both">
+          <div class="hc-type-icon">${item.icon}</div>
+          <div class="hc-main">
+            <div class="hc-name">${item.dataset}</div>
+            <div class="hc-meta">
+              <span class="chip chip-cherry">${item.typeLabel}</span>
+              <span class="hc-meta-item">◷ ${item.date} · ${item.time}</span>
+              <span class="hc-meta-item">⊕ ${item.rows.toLocaleString()} rows</span>
+              <span class="hc-meta-item">⊞ ${item.cols} cols</span>
+              <span class="chip ${st.chip}">${st.label}</span>
+            </div>
+            <div class="hc-summary">${item.summary}</div>
+          </div>
+          <div class="hc-actions">
+            <button class="btn btn-solid btn-sm" onclick="openAnalysis('${item.id}')">◈ Open</button>
+            <button class="btn btn-outline btn-sm" onclick="rerunAnalysis('${item.id}')">↻ Re-run</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteAnalysis('${item.id}', event)">⊗ Delete</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function setFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderHistory();
+  }
+
+  function filterHistory() {
+    currentSearch = document.getElementById('search-input').value;
+    renderHistory();
+  }
+
+  function openAnalysis(id) {
+    showToast('◈ Opening analysis workspace…');
+    setTimeout(() => window.location.href = `analysis.html?dataset=${id}`, 500);
+  }
+
+  function rerunAnalysis(id) {
+    const item = historyData.find(h => h.id === id);
+    showToast(`↻ Re-running ${item?.typeLabel || 'analysis'}…`);
+    setTimeout(() => window.location.href = `analysis.html?dataset=${id}`, 600);
+  }
+
+
+  async function deleteAnalysis(id, e) {
+    e.stopPropagation();
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/datasets/${id}`, {
+        method: "DELETE"
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete dataset");
+      }
+
+      const card = document.getElementById('hc-' + id);
+      card.classList.add('deleting');
+
+      setTimeout(() => {
+        historyData = historyData.filter(h => h.id !== id);
+        renderHistory();
+        showToast('⊗ Dataset deleted');
+      }, 320);
+
+    } catch (error) {
+      console.error(error);
+      showToast("Failed to delete dataset");
+    }
+  }
+
+
+  function exportHistory() {
+    showToast('⊞ Exporting history as CSV…');
+  }
+
+  function showToast(message) {
+    // Remove existing toasts
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 350);
+    }, 2500);
+  }
+
+
+  function updateSummaryCards() {
+    document.getElementById("total-count").textContent = historyData.length;
+
+    const mostUsedEl = document.querySelectorAll(".sc-value")[1];
+    const lastDatasetEl = document.querySelectorAll(".sc-value")[2];
+
+    if (historyData.length === 0) {
+      mostUsedEl.textContent = "-";
+      lastDatasetEl.textContent = "-";
+      return;
+    }
+
+    const typeCounts = {};
+
+    historyData.forEach(item => {
+      typeCounts[item.type] = (typeCounts[item.type] || 0) + 1;
+    });
+
+    const mostUsed = Object.keys(typeCounts).reduce((a, b) =>
+      typeCounts[a] > typeCounts[b] ? a : b
+    );
+
+    mostUsedEl.textContent = mostUsed.toUpperCase();
+    lastDatasetEl.textContent = historyData[0].dataset;
+  }
+
+
+
+
+
+
+  // Init
+  loadHistory();
+</script>
+</body>
+</html>

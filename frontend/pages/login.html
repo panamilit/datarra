@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datarra — Admin Login</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .login-shell {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--sp-xl);
+    }
+    .login-card {
+      width: min(520px, 100%);
+      background: var(--grad-card);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--r-xl);
+      padding: var(--sp-2xl);
+      box-shadow: var(--sh-card);
+      position: relative;
+      overflow: hidden;
+    }
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(180,48,72,0.16) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .login-card h1 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      margin-bottom: var(--sp-sm);
+    }
+    .login-card p {
+      color: var(--clr-text-dim);
+      margin-bottom: var(--sp-lg);
+      line-height: 1.55;
+    }
+    .login-form {
+      display: grid;
+      gap: var(--sp-md);
+    }
+    .login-note {
+      font-size: 13px;
+      color: var(--clr-text-dim);
+      margin-top: var(--sp-sm);
+    }
+    .login-footer {
+      margin-top: var(--sp-lg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--sp-sm);
+      flex-wrap: wrap;
+    }
+    .login-error {
+      color: var(--clr-red);
+      font-size: 13px;
+      min-height: 18px;
+    }
+  </style>
+</head>
+<body>
+<div class="login-shell">
+  <div class="login-card animate-up">
+    <h1>Admin Login</h1>
+    <p>Enter your credentials to continue to the Datarra admin panel.</p>
+
+    <form class="login-form" id="login-form">
+      <div>
+        <label for="login-user" class="login-label">Username</label>
+        <input class="input" id="login-user" name="username" type="text" placeholder="admin" autocomplete="username" required />
+      </div>
+      <div>
+        <label for="login-pass" class="login-label">Password</label>
+        <input class="input" id="login-pass" name="password" type="password" placeholder="********" autocomplete="current-password" required />
+      </div>
+      <div class="login-error" id="login-error"></div>
+      <div class="login-footer">
+        <button type="submit" class="btn btn-solid">Sign in</button>
+        <span class="login-note">Use <strong>admin / password123</strong> to sign in.</span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/script.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (isAdminAuthenticated()) {
+      window.location.replace('admin.html');
+      return;
+    }
+
+    const form = document.getElementById('login-form');
+    const errorEl = document.getElementById('login-error');
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const username = document.getElementById('login-user').value.trim();
+      const password = document.getElementById('login-pass').value;
+
+      if (authenticateAdmin(username, password)) {
+        window.location.replace('admin.html');
+      } else {
+        errorEl.textContent = 'Invalid username or password. Please try again.';
+      }
+    });
+  });
+</script>
+</body>
+</html>
