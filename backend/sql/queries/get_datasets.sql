@@ -8,4 +8,5 @@ SELECT
     columns_json,
     uploaded_at
 FROM datasets
+WHERE user_id = %s
 ORDER BY uploaded_at DESC;

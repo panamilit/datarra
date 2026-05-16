@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Datarra — Workspace</title>
+  <title>DataBerry — Analysis</title>
   <link rel="stylesheet" href="../css/style.css" />
   <style>
     /* ── Analysis Layout ── */
@@ -717,51 +717,33 @@
   setupAdminVisibility();
   updateUserUI();
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const params = new URLSearchParams(window.location.search);
-    const datasetId = params.get("dataset");
+  // Mock datasets
+  const MOCK_DATASETS = {
+    'churn_model_v3.csv':    { rows: 14832, cols: 18, size: '3.2 MB', nulls: '4.1%', theme: 'churn' },
+    'sales_q4_2024.csv':     { rows: 82441, cols: 24, size: '11.4 MB', nulls: '1.8%', theme: 'sales' },
+    'user_events.parquet':   { rows: 312890, cols: 9,  size: '24.7 MB', nulls: '0.2%', theme: 'events' },
+    'product_feedback.xlsx': { rows: 2347,  cols: 12, size: '0.9 MB', nulls: '11.3%', theme: 'feedback' },
+  };
 
-    if (datasetId) {
-      loadDatasetFromHistory(datasetId);
-    }
-  });
+  const MOCK_NAMES = Object.keys(MOCK_DATASETS);
 
   function triggerUpload() {
-    document.getElementById("file-input").click();
+    document.getElementById('file-input').click();
   }
 
-  async function handleFileSelect(event) {
-    const file = event.target.files[0];
+  async function handleFileSelect(e) {
+    const file = e.target.files[0];
 
     if (!file) return;
 
     await uploadDataset(file);
-    event.target.value = "";
+
+    e.target.value = '';
   }
 
-  function handleDragOver(event) {
-    event.preventDefault();
-    document.getElementById("drop-zone").classList.add("dragover");
-  }
-
-  function handleDragLeave() {
-    document.getElementById("drop-zone").classList.remove("dragover");
-  }
-
-  async function handleDrop(event) {
-    event.preventDefault();
-    handleDragLeave();
-
-    const file = event.dataTransfer.files[0];
-
-    if (!file) return;
-
-    await uploadDataset(file);
-  }
 
   async function uploadDataset(file) {
     showProcessing();
-    showWorkspaceStatus("Uploading dataset…");
 
     try {
       const formData = new FormData();
@@ -772,436 +754,424 @@
         body: formData
       });
 
-      if (!response || !response.ok) {
-        throw new Error(await getApiErrorMessage(response, "Upload failed. Please check the file format."));
+      if (!response.ok) {
+        throw new Error("Upload failed");
       }
 
-      const rawDataset = await response.json();
-      const dataset = normalizeDataset(rawDataset, file);
+      const dataset = await response.json();
 
-      displayLoadedDataset(dataset);
+      currentDataset = dataset;
+      datasetLoaded = true;
+
+      document.getElementById("drop-zone").style.display = "none";
+      document.getElementById("dataset-info").classList.add("visible");
+
+      document.getElementById("ds-filename").textContent = dataset.original_name;
+      document.getElementById("ds-rows").textContent = dataset.row_count.toLocaleString();
+      document.getElementById("ds-cols").textContent = dataset.column_count;
+      document.getElementById("ds-size").textContent = formatSize(dataset.file_size);
+      document.getElementById("ds-nulls").textContent = "—";
+
+      document.getElementById("ws-status").textContent =
+        `${dataset.original_name} · ${dataset.row_count.toLocaleString()} rows`;
+
+      document.getElementById("btn-reset").style.display = "";
+
+      [
+        "hp-eda",
+        "hp-outliers",
+        "hp-missing",
+        "hp-stats",
+        "hp-corr",
+        "hp-dtypes"
+      ].forEach(id => {
+        document.getElementById(id).disabled = false;
+      });
 
       addAIMessage(
-        `I've loaded <strong>${escapeHtml(dataset.filename)}</strong> — ${dataset.rows.toLocaleString()} rows and ${dataset.cols} columns. You can now run EDA, missing values, summary stats, or ask me about the dataset.`
+        `I've loaded **${dataset.original_name}** — ${dataset.row_count.toLocaleString()} rows and ${dataset.column_count} columns.`
       );
 
     } catch (error) {
       console.error(error);
-      showWorkspaceStatus(error.message || "Upload failed. Please check the file format.", "error");
+      showUploadMessage("Upload failed. Please check the file format.", "error");
     } finally {
       hideProcessing();
     }
   }
 
-  async function loadDatasetFromHistory(datasetId) {
-    showProcessing();
-    showWorkspaceStatus("Opening dataset…");
+  function showUploadMessage(message, type = "info") {
+    const status = document.getElementById("ws-status");
 
-    try {
-      const response = await apiFetch(`/datasets/${datasetId}`);
+    status.textContent = message;
 
-      if (!response || !response.ok) {
-        throw new Error(await getApiErrorMessage(response, "Failed to open dataset."));
-      }
-
-      const rawDataset = await response.json();
-      const dataset = normalizeDataset(rawDataset);
-
-      displayLoadedDataset(dataset);
-
-      addAIMessage(
-        `I've opened <strong>${escapeHtml(dataset.filename)}</strong> from your history — ${dataset.rows.toLocaleString()} rows and ${dataset.cols} columns.`
-      );
-
-    } catch (error) {
-      console.error(error);
-      showWorkspaceStatus(error.message || "Failed to open dataset.", "error");
-    } finally {
-      hideProcessing();
+    if (type === "error") {
+      status.style.color = "var(--clr-red)";
+    } else {
+      status.style.color = "var(--clr-text-dim)";
     }
   }
 
-  function normalizeDataset(rawDataset, file = null) {
-    const columns = rawDataset.columns || rawDataset.columns_json || [];
-    const missingValues = rawDataset.missing_values || rawDataset.missing_values_json || {};
-    const filename = rawDataset.original_name || rawDataset.filename || file?.name || "Dataset";
-    const rows = Number(rawDataset.row_count ?? rawDataset.rows ?? 0);
-    const cols = Number(rawDataset.column_count ?? (Array.isArray(columns) ? columns.length : 0));
-    const size = Number(rawDataset.file_size || file?.size || 0);
-    const nullPercent = calculateNullPercent(missingValues, rows, cols);
-
-    return {
-      ...rawDataset,
-      filename,
-      rows,
-      cols,
-      size,
-      columns,
-      missingValues,
-      nullPercent
-    };
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.add('dragover');
   }
 
-  async function getApiErrorMessage(response, fallback) {
-    if (!response) return fallback;
-
-    try {
-      const data = await response.json();
-      return data.detail || fallback;
-    } catch (_) {
-      return fallback;
-    }
+  function handleDragLeave() {
+    document.getElementById('drop-zone').classList.remove('dragover');
   }
 
-  function displayLoadedDataset(dataset) {
-    currentDataset = dataset;
-    datasetLoaded = true;
+  async function handleDrop(e) {
+    e.preventDefault();
+    handleDragLeave();
 
-    document.getElementById("drop-zone").style.display = "none";
-    document.getElementById("dataset-info").classList.add("visible");
+    const file = e.dataTransfer.files[0];
 
-    document.getElementById("ds-filename").textContent = dataset.filename;
-    document.getElementById("ds-rows").textContent = dataset.rows.toLocaleString();
-    document.getElementById("ds-cols").textContent = dataset.cols;
-    document.getElementById("ds-size").textContent = dataset.size ? formatSize(dataset.size) : "—";
-    document.getElementById("ds-nulls").textContent = dataset.nullPercent;
+    if (!file) return;
 
-    document.getElementById("btn-reset").style.display = "";
-
-    enableAnalysisButtons();
-    showWorkspaceStatus(`${dataset.filename} loaded · ${dataset.rows.toLocaleString()} rows`);
+    await uploadDataset(file);
   }
 
-  function enableAnalysisButtons() {
-    ["hp-eda", "hp-outliers", "hp-missing", "hp-stats", "hp-corr", "hp-dtypes"].forEach(id => {
-      document.getElementById(id).disabled = false;
-    });
+
+
+  function formatSize(bytes) {
+    if (bytes > 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+    return (bytes / 1024).toFixed(0) + ' KB';
   }
 
-  function disableAnalysisButtons() {
-    ["hp-eda", "hp-outliers", "hp-missing", "hp-stats", "hp-corr", "hp-dtypes"].forEach(id => {
-      document.getElementById(id).disabled = true;
-    });
+  function showProcessing() {
+    const bar = document.getElementById('proc-bar');
+    const fill = document.getElementById('proc-fill');
+    bar.classList.add('active');
+    fill.style.display = 'block';
+    fill.style.animation = 'none';
+    fill.offsetHeight; // reflow
+    fill.style.animation = 'processing 1.3s var(--ease-out) forwards';
+  }
+
+  function hideProcessing() {
+    setTimeout(() => {
+      document.getElementById('proc-bar').classList.remove('active');
+      document.getElementById('proc-fill').style.display = 'none';
+    }, 300);
   }
 
   function resetWorkspace() {
     datasetLoaded = false;
     currentDataset = null;
-
-    document.getElementById("drop-zone").style.display = "";
-    document.getElementById("dataset-info").classList.remove("visible");
-    document.getElementById("btn-reset").style.display = "none";
-
-    showWorkspaceStatus("Upload a dataset to begin");
+    document.getElementById('drop-zone').style.display = '';
+    document.getElementById('dataset-info').classList.remove('visible');
+    document.getElementById('btn-reset').style.display = 'none';
+    document.getElementById('ws-status').textContent = 'Upload a dataset to begin';
     clearResults();
-    disableAnalysisButtons();
+    ['hp-eda','hp-outliers','hp-missing','hp-stats','hp-corr','hp-dtypes'].forEach(id => {
+      document.getElementById(id).disabled = true;
+    });
   }
 
-  function runAnalysis(type) {
-    if (!datasetLoaded || !currentDataset) return;
+  // ── ANALYSIS OUTPUTS ───────────────────────────────
+  const ANALYSIS_OUTPUTS = {
+    eda: {
+      label: 'EDA Report',
+      render: () => `
+        <div class="result-block">
+          <div class="result-block-header">Distribution Overview <span class="badge">Numeric columns</span></div>
+          <div class="bar-chart">
+            ${['age','revenue','sessions','tenure','score','events','spend'].map((col, i) => {
+              const h = [55,82,38,64,91,47,73][i];
+              return `<div class="bar-col"><div class="bar" style="height:${h}%"></div><div class="bar-label">${col}</div></div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="result-block">
+          <div class="result-block-header">Column Summary <span class="badge">18 columns</span></div>
+          <div class="stat-rows">
+            ${[
+              ['numeric_cols','11', 61],['categorical_cols','5', 28],['datetime_cols','2', 11],
+              ['complete_rows','91.2%',91],['duplicate_rows','0.3%',0.3],['memory_usage','3.2 MB',60]
+            ].map(([k,v,p]) => `
+              <div class="stat-row">
+                <span class="sr-key">${k}</span>
+                <div class="sr-bar"><div class="sr-fill" style="width:${p}%"></div></div>
+                <span class="sr-val">${v}</span>
+              </div>`).join('')}
+          </div>
+        </div>`,
+      ai: `EDA complete! Here's what I found:\n\n• **11 numeric** and **5 categorical** columns — good mix for modelling\n• Distribution looks roughly normal for most features except **revenue** (right-skewed)\n• **91.2% complete rows** — healthy dataset, though worth imputing the 8.8% gap before training\n\nI'd suggest running outlier detection next — the revenue column looks suspicious around the 99th percentile.`
+    },
+    outliers: {
+      label: 'Outlier Detection',
+      render: () => `
+        <div class="result-block">
+          <div class="result-block-header">Outlier Summary <span class="badge">IQR + Z-score</span></div>
+          <div class="stat-rows">
+            ${[
+              ['revenue', '3.4% flagged', 72],
+              ['session_duration', '1.8% flagged', 38],
+              ['spend_per_day', '5.1% flagged', 95],
+              ['age', '0.2% flagged', 4],
+              ['events_30d', '2.7% flagged', 55],
+            ].map(([k,v,p]) => `
+              <div class="stat-row">
+                <span class="sr-key">${k}</span>
+                <div class="sr-bar"><div class="sr-fill" style="width:${p}%;background:var(--clr-red)"></div></div>
+                <span class="sr-val" style="color:${p>60?'var(--clr-cherry)':'var(--clr-warn)'}">${v}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="result-block">
+          <div class="result-block-header">Top Anomalies <span class="badge">Extreme values</span></div>
+          <table class="data-table">
+            <thead><tr><th>Row</th><th>Column</th><th>Value</th><th>Z-score</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">#4821</td><td>revenue</td><td class="mono">$489,200</td><td><span class="chip chip-warn">4.8σ</span></td></tr>
+              <tr><td class="mono">#11023</td><td>spend_per_day</td><td class="mono">$2,140</td><td><span class="chip chip-warn">4.3σ</span></td></tr>
+              <tr><td class="mono">#302</td><td>session_duration</td><td class="mono">44,820s</td><td><span class="chip chip-warn">3.9σ</span></td></tr>
+            </tbody>
+          </table>
+        </div>`,
+      ai: `Outlier scan finished. Here's what stands out:\n\n⚠️ **spend_per_day** has the highest outlier rate (5.1%) — row #11023 shows $2,140/day, which is almost certainly either a data entry error or a whale user\n\n⚠️ **revenue** has a cluster of ~120 rows above $100k — these are legitimate high-value accounts, but they'll skew regression models\n\n**Recommendation**: Cap revenue at 99th percentile before training, and investigate the session_duration anomaly at row #302 (12+ hour session might be a tracking bug).`
+    },
+    missing: {
+      label: 'Missing Values',
+      render: () => `
+        <div class="result-block">
+          <div class="result-block-header">Null Analysis <span class="badge">Column-level</span></div>
+          <div class="stat-rows">
+            ${[
+              ['last_purchase_date','19.4%',94],['referral_source','12.8%',62],
+              ['user_segment','8.3%',40],['device_type','3.1%',15],
+              ['plan_start_date','1.2%',6],['user_id','0%',0],
+            ].map(([k,v,p]) => `
+              <div class="stat-row">
+                <span class="sr-key">${k}</span>
+                <div class="sr-bar"><div class="sr-fill" style="width:${p}%;background:${p>30?'var(--clr-cherry)':p>10?'var(--clr-warn)':'var(--clr-info)'}"></div></div>
+                <span class="sr-val">${v}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="result-block">
+          <div class="result-block-header">Imputation Suggestions</div>
+          <table class="data-table">
+            <thead><tr><th>Column</th><th>Type</th><th>Strategy</th></tr></thead>
+            <tbody>
+              <tr><td>last_purchase_date</td><td><span class="chip chip-info">datetime</span></td><td>Forward fill</td></tr>
+              <tr><td>referral_source</td><td><span class="chip chip-cherry">categorical</span></td><td>Mode / "Unknown"</td></tr>
+              <tr><td>user_segment</td><td><span class="chip chip-cherry">categorical</span></td><td>KNN imputation</td></tr>
+            </tbody>
+          </table>
+        </div>`,
+      ai: `Missing value scan done. **3 columns need attention**:\n\n🔴 **last_purchase_date** (19.4% missing) — This is high. Missing likely means the user has never purchased. I'd create a binary flag \`has_purchased\` and then forward-fill for temporal models.\n\n🟡 **referral_source** (12.8%) — Safe to fill with "Unknown" as a category. Don't drop these rows.\n\n🟡 **user_segment** (8.3%) — KNN or model-based imputation recommended here since it correlates with other features.\n\nOverall null rate is 4.1% — acceptable for most models.`
+    },
+    stats: {
+      label: 'Summary Statistics',
+      render: () => `
+        <div class="result-block">
+          <div class="result-block-header">Descriptive Statistics <span class="badge">Numeric columns</span></div>
+          <table class="data-table">
+            <thead><tr><th>Column</th><th>Mean</th><th>Std</th><th>Min</th><th>Max</th><th>Median</th></tr></thead>
+            <tbody>
+              <tr><td>age</td><td class="mono">34.2</td><td class="mono">9.8</td><td class="mono">18</td><td class="mono">72</td><td class="mono">33</td></tr>
+              <tr><td>revenue</td><td class="mono">$4,820</td><td class="mono">$9,140</td><td class="mono">$0</td><td class="mono">$489k</td><td class="mono">$1,240</td></tr>
+              <tr><td>sessions_30d</td><td class="mono">8.4</td><td class="mono">5.2</td><td class="mono">0</td><td class="mono">61</td><td class="mono">7</td></tr>
+              <tr><td>tenure_days</td><td class="mono">412</td><td class="mono">298</td><td class="mono">1</td><td class="mono">1,842</td><td class="mono">318</td></tr>
+              <tr><td>spend_per_day</td><td class="mono">$12.40</td><td class="mono">$38.20</td><td class="mono">$0</td><td class="mono">$2,140</td><td class="mono">$3.80</td></tr>
+            </tbody>
+          </table>
+        </div>`,
+      ai: `Key stats summary:\n\n• **Revenue** has a massive standard deviation ($9,140 vs $4,820 mean) — this confirms the heavy right skew we saw in EDA. Median ($1,240) is a better central tendency measure here.\n\n• **Sessions** look healthy: median 7, mean 8.4, which is close — good sign of symmetry\n\n• **Tenure** ranges from 1 day to 5+ years — you likely want to segment this into cohorts for churn analysis.\n\nWant me to generate quartile breakdowns or run a skewness test?`
+    },
+    correlation: {
+      label: 'Correlation Matrix',
+      render: () => {
+        const cols = ['rev','sess','age','spend','tenure'];
+        const matrix = [
+          [1.00, 0.72, 0.14, 0.88, 0.43],
+          [0.72, 1.00, 0.08, 0.61, 0.55],
+          [0.14, 0.08, 1.00, 0.11, 0.22],
+          [0.88, 0.61, 0.11, 1.00, 0.38],
+          [0.43, 0.55, 0.22, 0.38, 1.00],
+        ];
+        const getColor = (v) => {
+          const r = Math.round(107 + (200-107)*v);
+          const g = Math.round(26 + (10-26)*v);
+          const b = Math.round(40 + (40)*v);
+          return `rgb(${r},${g},${b})`;
+        };
+        return `
+          <div class="result-block">
+            <div class="result-block-header">Pearson Correlation <span class="badge">Numeric · 5×5</span></div>
+            <div style="overflow-x:auto">
+              <table class="data-table" style="min-width:300px">
+                <thead><tr><th></th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+                <tbody>
+                  ${matrix.map((row,i) => `<tr><td style="font-weight:600;color:var(--clr-text)">${cols[i]}</td>${row.map(v => `<td style="background:rgba(${v>0.7?'180,48,72':'96,152,212'},${Math.abs(v)*0.4});font-family:var(--font-mono);font-size:12px">${v.toFixed(2)}</td>`).join('')}</tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="result-block">
+            <div class="result-block-header">Top Correlations <span class="badge">|r| > 0.5</span></div>
+            <div class="stat-rows">
+              ${[['revenue ↔ spend_per_day','r = 0.88',88],['revenue ↔ sessions','r = 0.72',72],['sessions ↔ spend_per_day','r = 0.61',61],['sessions ↔ tenure','r = 0.55',55]].map(([k,v,p])=>`<div class="stat-row"><span class="sr-key">${k}</span><div class="sr-bar"><div class="sr-fill" style="width:${p}%"></div></div><span class="sr-val">${v}</span></div>`).join('')}
+            </div>
+          </div>`;
+      },
+      ai: `Strong correlations found:\n\n📈 **revenue ↔ spend_per_day** (r = 0.88) — Almost redundant features. Use one or engineer a composite to avoid multicollinearity in regression.\n\n📈 **revenue ↔ sessions** (r = 0.72) — Engagement drives revenue. This is your most actionable lever.\n\n💡 **age** has almost no correlation with anything (max |r| = 0.22) — consider dropping it unless domain knowledge suggests otherwise.\n\nShall I run a VIF test to flag multicollinear features?`
+    },
+    dtypes: {
+      label: 'Data Types',
+      render: () => `
+        <div class="result-block">
+          <div class="result-block-header">Schema Overview <span class="badge">18 columns</span></div>
+          <table class="data-table">
+            <thead><tr><th>Column</th><th>Type</th><th>Unique</th><th>Sample</th></tr></thead>
+            <tbody>
+              ${[
+                ['user_id','int64','14,832','100001, 100002…'],
+                ['created_at','datetime64','14,804','2023-01-04'],
+                ['plan_type','object','4','free, starter, pro, enterprise'],
+                ['age','float64','54','28.0, 34.0, 41.0'],
+                ['revenue','float64','8,432','0.0, 49.99, 299.0'],
+                ['is_churned','bool','2','True, False'],
+                ['last_event','datetime64','14,112','2024-10-14'],
+                ['country','object','68','US, GB, DE, AU…'],
+              ].map(([c,t,u,s]) => `<tr>
+                <td class="mono">${c}</td>
+                <td><span class="chip ${t.includes('float')||t.includes('int')?'chip-info':t.includes('datetime')?'chip-warn':t.includes('bool')?'chip-cherry':'chip-success'}">${t}</span></td>
+                <td class="mono">${u}</td>
+                <td style="font-size:12px;color:var(--clr-text-dim)">${s}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`,
+      ai: `Schema looks clean! A few notes:\n\n• **user_id** is int64 — safe to use as index, not as a feature\n• **is_churned** is already boolean — great, no encoding needed for tree-based models\n• **plan_type** has 4 levels — one-hot encode this for logistic regression, leave as-is for gradient boosting\n• **country** (68 unique) — consider grouping to regions or using target encoding\n\nOverall this schema is model-ready with minimal preprocessing.`
+    }
+  };
 
-    const cfg = getAnalysisConfig(type);
+  function runAnalysis(type) {
+    if (!datasetLoaded) return;
+    const cfg = ANALYSIS_OUTPUTS[type];
     if (!cfg) return;
 
-    const btnId = {
-      eda: "hp-eda",
-      outliers: "hp-outliers",
-      missing: "hp-missing",
-      stats: "hp-stats",
-      correlation: "hp-corr",
-      dtypes: "hp-dtypes"
-    }[type];
-
+    // Visual feedback on button
+    const btnId = { eda:'hp-eda', outliers:'hp-outliers', missing:'hp-missing', stats:'hp-stats', correlation:'hp-corr', dtypes:'hp-dtypes' }[type];
     const btn = document.getElementById(btnId);
-    const originalHtml = btn.innerHTML;
-
+    const origHTML = btn.innerHTML;
     btn.innerHTML = `<span class="hp-btn-name"><span class="spin"></span> Running…</span>`;
-    btn.classList.add("loading");
+    btn.classList.add('loading');
 
     showProcessing();
 
     setTimeout(() => {
-      document.getElementById("results-title").textContent = cfg.label;
-      document.getElementById("results-type").textContent = currentDataset.filename;
-      document.getElementById("results-type").style.display = "";
-      document.getElementById("btn-clear-results").style.display = "";
-      document.getElementById("results-body").innerHTML = cfg.html;
+      // Update results
+      const body = document.getElementById('results-body');
+      const title = document.getElementById('results-title');
+      const typeEl = document.getElementById('results-type');
+      const clearBtn = document.getElementById('btn-clear-results');
+
+      title.textContent = cfg.label;
+      typeEl.textContent = currentDataset?.filename || 'Dataset';
+      typeEl.style.display = '';
+      clearBtn.style.display = '';
+
+      body.innerHTML = cfg.render();
 
       hideProcessing();
-      btn.innerHTML = originalHtml;
-      btn.classList.remove("loading");
+      btn.innerHTML = origHTML;
+      btn.classList.remove('loading');
 
+      // Add AI message
       addAIMessage(cfg.ai);
-    }, 500);
-  }
-
-  function getAnalysisConfig(type) {
-    const dataset = currentDataset;
-    const columns = Array.isArray(dataset.columns) ? dataset.columns : [];
-    const missingEntries = Object.entries(dataset.missingValues || {});
-    const visibleColumns = columns.slice(0, 10);
-
-    const configs = {
-      eda: {
-        label: "EDA Report",
-        html: `
-          <div class="result-block">
-            <div class="result-block-header">Dataset Overview <span class="badge">Real metadata</span></div>
-            <div class="stat-rows">
-              ${renderStatRow("filename", dataset.filename)}
-              ${renderStatRow("rows", dataset.rows.toLocaleString())}
-              ${renderStatRow("columns", dataset.cols)}
-              ${renderStatRow("file_size", dataset.size ? formatSize(dataset.size) : "—")}
-              ${renderStatRow("null_rate", dataset.nullPercent)}
-            </div>
-          </div>
-          <div class="result-block">
-            <div class="result-block-header">Columns <span class="badge">${dataset.cols} columns</span></div>
-            ${renderColumnList(visibleColumns)}
-          </div>`,
-        ai: `EDA ready. I found <strong>${dataset.rows.toLocaleString()}</strong> rows and <strong>${dataset.cols}</strong> columns in <strong>${escapeHtml(dataset.filename)}</strong>.`
-      },
-
-      missing: {
-        label: "Missing Values",
-        html: `
-          <div class="result-block">
-            <div class="result-block-header">Missing Value Summary <span class="badge">Column-level</span></div>
-            ${
-              missingEntries.length
-                ? `<div class="stat-rows">${missingEntries.slice(0, 12).map(([key, value]) => renderStatRow(key, Number(value || 0).toLocaleString())).join("")}</div>`
-                : `<div class="empty-state"><div class="empty-title">No missing value data available</div><div class="empty-desc">The backend did not return missing value details for this dataset.</div></div>`
-            }
-          </div>`,
-        ai: missingEntries.length
-          ? `Missing value scan ready. Total null rate is approximately <strong>${dataset.nullPercent}</strong>.`
-          : `I do not have missing value details for this opened dataset yet. Upload responses include this now, but history metadata may need storing missing values later.`
-      },
-
-      stats: {
-        label: "Summary Statistics",
-        html: `
-          <div class="result-block">
-            <div class="result-block-header">Available Metadata <span class="badge">Current backend</span></div>
-            <div class="stat-rows">
-              ${renderStatRow("rows", dataset.rows.toLocaleString())}
-              ${renderStatRow("columns", dataset.cols)}
-              ${renderStatRow("file_type", dataset.file_type || "—")}
-              ${renderStatRow("size", dataset.size ? formatSize(dataset.size) : "—")}
-            </div>
-          </div>`,
-        ai: `Summary metadata is available. Full numeric statistics will need a backend analysis endpoint next.`
-      },
-
-      dtypes: {
-        label: "Data Types",
-        html: `
-          <div class="result-block">
-            <div class="result-block-header">Schema Preview <span class="badge">${dataset.cols} columns</span></div>
-            ${renderColumnList(visibleColumns)}
-          </div>`,
-        ai: `I can see the column names. Actual dtype detection should be added as a backend analysis endpoint next.`
-      },
-
-      outliers: {
-        label: "Outlier Detection",
-        html: renderComingSoon("Outlier detection will be connected to a backend Python analysis endpoint."),
-        ai: `Outlier detection needs a backend endpoint using pandas/numpy. The dataset is loaded and ready for that next step.`
-      },
-
-      correlation: {
-        label: "Correlation Matrix",
-        html: renderComingSoon("Correlation analysis will be connected to a backend Python analysis endpoint."),
-        ai: `Correlation analysis needs a backend endpoint that reads the stored dataset and calculates numeric correlations.`
-      }
-    };
-
-    return configs[type];
-  }
-
-  function renderStatRow(key, value) {
-    return `
-      <div class="stat-row">
-        <span class="sr-key">${escapeHtml(String(key))}</span>
-        <span class="sr-val">${escapeHtml(String(value))}</span>
-      </div>`;
-  }
-
-  function renderColumnList(columns) {
-    if (!columns.length) {
-      return `<div class="empty-state"><div class="empty-title">No columns found</div></div>`;
-    }
-
-    return `
-      <div class="stat-rows">
-        ${columns.map((column, index) => renderStatRow(`#${index + 1}`, column)).join("")}
-      </div>`;
-  }
-
-  function renderComingSoon(message) {
-    return `
-      <div class="empty-state">
-        <div class="empty-icon">◈</div>
-        <div class="empty-title">Backend analysis coming next</div>
-        <div class="empty-desc">${escapeHtml(message)}</div>
-      </div>`;
+    }, 800 + Math.random() * 600);
   }
 
   function clearResults() {
-    document.getElementById("results-body").innerHTML = `
+    document.getElementById('results-body').innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">◈</div>
         <div class="empty-title">No results yet</div>
         <div class="empty-desc">Run an analysis from the left panel to see results here.</div>
       </div>`;
-
-    document.getElementById("results-title").textContent = "Results";
-    document.getElementById("results-type").style.display = "none";
-    document.getElementById("btn-clear-results").style.display = "none";
+    document.getElementById('results-title').textContent = 'Results';
+    document.getElementById('results-type').style.display = 'none';
+    document.getElementById('btn-clear-results').style.display = 'none';
   }
 
-  function sendChatMessage() {
-    const input = document.getElementById("chat-input");
-    const text = input.value.trim();
-
-    if (!text) return;
-
-    input.value = "";
-
-    addUserMessage(text);
-
-    if (!datasetLoaded) {
-      addAIMessage("Upload or open a dataset first, then I can help you analyze it.");
-      return;
-    }
-
-    addAIMessage(
-      `I can see <strong>${escapeHtml(currentDataset.filename)}</strong>. Right now I can summarize metadata and columns. Deeper AI analysis will come after we connect the backend analysis/chat endpoints.`
-    );
-  }
-
-  function sendSuggestedPrompt(prompt) {
-    document.getElementById("chat-input").value = prompt;
-    sendChatMessage();
-  }
-
-  function handleChatKey(event) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      sendChatMessage();
-    }
-  }
-
-  function addUserMessage(text) {
-    const messages = document.getElementById("chat-messages");
-    const user = getStoredUser();
-    const initials = user?.display_name ? getInitials(user.display_name) : "U";
-
-    const bubble = document.createElement("div");
-    bubble.className = "chat-bubble bubble-user";
-    bubble.innerHTML = `
-      <div class="bubble-avatar">${escapeHtml(initials)}</div>
-      <div>
-        <div class="bubble-content">${escapeHtml(text)}</div>
-        <div class="bubble-time">${getTime()}</div>
-      </div>`;
-
-    messages.appendChild(bubble);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function addAIMessage(html) {
-    const messages = document.getElementById("chat-messages");
-
-    const typing = document.createElement("div");
-    typing.className = "chat-bubble bubble-ai";
-    typing.innerHTML = `
-      <div class="bubble-avatar">AI</div>
-      <div class="typing-indicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-      </div>`;
-
-    messages.appendChild(typing);
-    messages.scrollTop = messages.scrollHeight;
-
-    setTimeout(() => {
-      typing.remove();
-
-      const bubble = document.createElement("div");
-      bubble.className = "chat-bubble bubble-ai";
-      bubble.innerHTML = `
-        <div class="bubble-avatar">AI</div>
-        <div>
-          <div class="bubble-content">${html}</div>
-          <div class="bubble-time">${getTime()}</div>
-        </div>`;
-
-      messages.appendChild(bubble);
-      messages.scrollTop = messages.scrollHeight;
-    }, 450);
-  }
-
-  function calculateNullPercent(missingValues, rows, cols) {
-    if (!missingValues || rows === 0 || cols === 0) return "—";
-
-    const totalMissing = Object.values(missingValues).reduce((sum, value) => {
-      return sum + Number(value || 0);
-    }, 0);
-
-    const totalCells = rows * cols;
-
-    if (totalCells === 0) return "—";
-
-    return ((totalMissing / totalCells) * 100).toFixed(1) + "%";
-  }
-
-  function formatSize(bytes) {
-    if (!bytes) return "—";
-    if (bytes > 1048576) return (bytes / 1048576).toFixed(1) + " MB";
-    return (bytes / 1024).toFixed(0) + " KB";
-  }
-
-  function showProcessing() {
-    const bar = document.getElementById("proc-bar");
-    const fill = document.getElementById("proc-fill");
-
-    bar.classList.add("active");
-    fill.style.display = "block";
-    fill.style.animation = "none";
-    fill.offsetHeight;
-    fill.style.animation = "processing 1.3s var(--ease-out) forwards";
-  }
-
-  function hideProcessing() {
-    setTimeout(() => {
-      document.getElementById("proc-bar").classList.remove("active");
-      document.getElementById("proc-fill").style.display = "none";
-    }, 300);
-  }
-
-  function showWorkspaceStatus(message, type = "info") {
-    const status = document.getElementById("ws-status");
-
-    status.textContent = message;
-    status.style.color = type === "error"
-      ? "var(--clr-red)"
-      : "var(--clr-text-dim)";
-  }
+  // ── CHAT ───────────────────────────────────────────
+  const AI_RESPONSES = [
+    "Great question! Based on the current dataset, I'd suggest starting with the correlation overview to identify the most predictive features before building any model.",
+    "Looking at the data structure, this looks like a classic binary classification problem. The class imbalance (if any) will be your main challenge here.",
+    "The missing value pattern is likely not random — missing data in `last_purchase_date` strongly correlates with churned users. This is itself a signal!",
+    "I'd recommend a tree-based model for this dataset. The mix of categorical and numerical features, plus the skewed distributions, makes gradient boosting a natural fit.",
+    "The outlier rows I flagged earlier could actually be your most valuable customers. Before removing them, consider segmenting them out rather than dropping them.",
+    "For the temporal columns, make sure you're not leaking future information into your training set. Always split by date, not randomly.",
+    "Feature engineering idea: try computing `revenue / sessions` as a revenue-per-session metric. It might be a stronger predictor than either column alone.",
+    "Based on what I see, your data has some excellent predictive potential. Estimated baseline AUC for a churn model: ~0.82–0.86 with proper feature selection.",
+  ];
 
   function getTime() {
     const now = new Date();
-    return now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
+    return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
   }
 
-  function escapeHtml(value) {
-    return String(value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+  function addAIMessage(text) {
+    const msgs = document.getElementById('chat-messages');
+
+    // Typing indicator
+    const typing = document.createElement('div');
+    typing.className = 'chat-bubble bubble-ai';
+    typing.innerHTML = `<div class="bubble-avatar">AI</div><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+    msgs.appendChild(typing);
+    msgs.scrollTop = msgs.scrollHeight;
+
+    setTimeout(() => {
+      typing.remove();
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble bubble-ai';
+      bubble.innerHTML = `
+        <div class="bubble-avatar">AI</div>
+        <div>
+          <div class="bubble-content">${text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')}</div>
+          <div class="bubble-time">${getTime()}</div>
+        </div>`;
+      msgs.appendChild(bubble);
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 900 + Math.random() * 600);
+  }
+
+  function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    const msgs = document.getElementById('chat-messages');
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble bubble-user';
+    bubble.innerHTML = `
+      <div class="bubble-avatar">AK</div>
+      <div>
+        <div class="bubble-content">${text}</div>
+        <div class="bubble-time">${getTime()}</div>
+      </div>`;
+    msgs.appendChild(bubble);
+    msgs.scrollTop = msgs.scrollHeight;
+
+    const reply = AI_RESPONSES[Math.floor(Math.random() * AI_RESPONSES.length)];
+    addAIMessage(reply);
+  }
+
+  function sendSuggestedPrompt(prompt) {
+    document.getElementById('chat-input').value = prompt;
+    sendChatMessage();
+  }
+
+  function handleChatKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
   }
 </script>
 </body>

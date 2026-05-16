@@ -13,6 +13,7 @@ def insert_dataset(
     row_count: int,
     column_count: int,
     columns: list,
+    user_id: int,
 ) -> int:
     query = load_sql_query("sql/queries/insert_dataset.sql")
 
@@ -32,6 +33,7 @@ def insert_dataset(
                 row_count,
                 column_count,
                 json.dumps(columns),
+                user_id,
             ),
         )
 
@@ -46,14 +48,14 @@ def insert_dataset(
 
 
 
-def get_all_datasets() -> list[dict]:
+def get_all_datasets(user_id: int) -> list[dict]:
     query = load_sql_query("sql/queries/get_datasets.sql")
 
     conn = get_connection()
     cur = conn.cursor()
 
     try:
-        cur.execute(query)
+        cur.execute(query, (user_id,))
         rows = cur.fetchall()
 
         datasets = []
@@ -78,14 +80,14 @@ def get_all_datasets() -> list[dict]:
 
 
 
-def get_dataset_by_file_id(file_id: str) -> dict | None:
+def get_dataset_by_file_id(file_id: str, user_id: int) -> dict | None:
     query = load_sql_query("sql/queries/get_dataset_by_file_id.sql")
 
     conn = get_connection()
     cur = conn.cursor()
 
     try:
-        cur.execute(query, (file_id,))
+        cur.execute(query, (file_id, user_id))
         row = cur.fetchone()
 
         if not row:
@@ -109,16 +111,14 @@ def get_dataset_by_file_id(file_id: str) -> dict | None:
         conn.close()
 
 
-
-
-def delete_dataset_by_file_id(file_id: str) -> str | None:
+def delete_dataset_by_file_id(file_id: str, user_id: int) -> str | None:
     query = load_sql_query("sql/queries/delete_dataset_by_file_id.sql")
 
     conn = get_connection()
     cur = conn.cursor()
 
     try:
-        cur.execute(query, (file_id,))
+        cur.execute(query, (file_id, user_id))
         row = cur.fetchone()
 
         if not row:

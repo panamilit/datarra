@@ -133,7 +133,7 @@
       <a href="history.html" class="nav-link">
         <span class="nav-icon">◷</span> History
       </a>
-      <a href="admin.html" class="nav-link active">
+      <a href="admin.html" class="nav-link" data-admin-only>
         <span class="nav-icon">♛</span> Admin
       </a>
 
@@ -151,7 +151,7 @@
 
       <span class="nav-section-label">Account</span>
 
-      <a href="#" class="nav-link">
+      <a href="profile.html" class="nav-link">
         <span class="nav-icon">◈</span> Settings
       </a>
       <a href="#" class="nav-link">
@@ -161,10 +161,10 @@
 
     <div class="sidebar-footer">
       <div class="sidebar-user">
-        <div class="sidebar-avatar">MM</div>
+        <div class="sidebar-avatar" data-user-initials>U</div>
         <div class="sidebar-user-info">
-          <div class="sidebar-user-name">Max Makarov</div>
-          <div class="sidebar-user-role">Administrator</div>
+          <div class="sidebar-user-name" data-user-name>User</div>
+          <div class="sidebar-user-role" data-user-role>Data Explorer</div>
         </div>
       </div>
     </div>
@@ -333,11 +333,12 @@
     </div>
   </main>
 </div>
+<script src="../js/config.js"></script>
 <script src="../js/script.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    requireAdminAuth();
-  });
+  requireAdmin();
+  setupAdminVisibility();
+  updateUserUI();
 </script>
 </body>
 </html>

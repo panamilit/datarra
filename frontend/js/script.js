@@ -97,3 +97,103 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+
+const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;
+
+function getToken() {
+  return localStorage.getItem("datarra_token");
+}
+
+function getStoredUser() {
+  const rawUser = localStorage.getItem("datarra_user");
+  return rawUser ? JSON.parse(rawUser) : null;
+}
+
+function saveUser(user) {
+  localStorage.setItem("datarra_user", JSON.stringify(user));
+}
+
+function logout() {
+  localStorage.removeItem("datarra_token");
+  localStorage.removeItem("datarra_user");
+  window.location.replace("login.html");
+}
+
+function requireAuth() {
+  const token = getToken();
+
+  if (!token) {
+    window.location.href = "login.html";
+  }
+}
+
+function requireAdmin() {
+  requireAuth();
+
+  const user = getStoredUser();
+
+  if (!user || !user.is_admin) {
+    window.location.href = "index.html";
+  }
+}
+
+function setupAdminVisibility() {
+  const user = getStoredUser();
+
+  document.querySelectorAll("[data-admin-only]").forEach(el => {
+    if (!user || !user.is_admin) {
+      el.style.display = "none";
+    }
+  });
+}
+
+async function apiFetch(path, options = {}) {
+  const token = getToken();
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (response.status === 401) {
+    logout();
+    return;
+  }
+
+  return response;
+}
+
+
+function getInitials(name) {
+  return name
+    .split(" ")
+    .map(part => part[0] || "")
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function updateUserUI() {
+  const user = getStoredUser();
+
+  if (!user) return;
+
+  const name = user.display_name || "User";
+  const initials = getInitials(name);
+
+  document.querySelectorAll("[data-user-name]").forEach(el => {
+    el.textContent = name;
+  });
+
+  document.querySelectorAll("[data-user-initials]").forEach(el => {
+    el.textContent = initials;
+  });
+
+  document.querySelectorAll("[data-user-role]").forEach(el => {
+    el.textContent = user.is_admin ? "Admin" : "Data Explorer";
+  });
+}

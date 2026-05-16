@@ -10,4 +10,4 @@ SELECT
     columns_json,
     uploaded_at
 FROM datasets
-WHERE file_id = %s;
+WHERE file_id = %s AND user_id = %s;

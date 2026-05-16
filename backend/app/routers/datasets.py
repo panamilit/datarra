@@ -1,5 +1,6 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from app.services.file_reader import read_dataset
+from app.core.security import get_current_user
 from app.repositories.dataset_repository import (
     insert_dataset, 
     get_all_datasets,
@@ -20,14 +21,17 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @router.get("")
-def list_datasets():
-    return get_all_datasets()
+def list_datasets(current_user=Depends(get_current_user)):
+    return get_all_datasets(user_id=current_user["id"])
 
 
 
 @router.get("/{file_id}")
-def get_dataset(file_id: str):
-    dataset = get_dataset_by_file_id(file_id)
+def get_dataset(file_id: str, current_user=Depends(get_current_user)):
+    dataset = get_dataset_by_file_id(
+        file_id=file_id,
+        user_id=current_user["id"],
+    )
 
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -37,7 +41,10 @@ def get_dataset(file_id: str):
 
 
 @router.post("/upload")
-async def upload_dataset(file: UploadFile = File(...)):
+async def upload_dataset(
+    file: UploadFile = File(...),
+    current_user=Depends(get_current_user),
+):
     file_id = uuid.uuid4()
 
     if not file.filename or "." not in file.filename:
@@ -74,6 +81,7 @@ async def upload_dataset(file: UploadFile = File(...)):
         row_count=len(df),
         column_count=len(df.columns),
         columns=list(df.columns),
+        user_id=current_user["id"],
     )
 
     return {
@@ -89,8 +97,11 @@ async def upload_dataset(file: UploadFile = File(...)):
 
 
 @router.delete("/{file_id}")
-def delete_dataset(file_id: str):
-    file_path = delete_dataset_by_file_id(file_id)
+def delete_dataset(file_id: str, current_user=Depends(get_current_user)):
+    file_path = delete_dataset_by_file_id(
+        file_id=file_id,
+        user_id=current_user["id"],
+    )
 
     if not file_path:
         raise HTTPException(status_code=404, detail="Dataset not found")

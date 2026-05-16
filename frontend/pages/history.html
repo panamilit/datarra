@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DataBerry — History</title>
+  <title>Datarra — History</title>
   <link rel="stylesheet" href="../css/style.css" />
   <style>
     .history-layout {
@@ -261,21 +261,20 @@
       <a href="index.html" class="nav-link"><span class="nav-icon">⬡</span> Dashboard</a>
       <a href="analysis.html" class="nav-link"><span class="nav-icon">◈</span> Analysis <span class="nav-badge">New</span></a>
       <a href="history.html" class="nav-link active"><span class="nav-icon">◷</span> History</a>
-      <a href="admin.html" class="nav-link"><span class="nav-icon">♛</span> Admin</a>
       <span class="nav-section-label">Tools</span>
       <a href="#" class="nav-link"><span class="nav-icon">⊕</span> Datasets</a>
       <a href="#" class="nav-link"><span class="nav-icon">◎</span> Models</a>
       <a href="#" class="nav-link"><span class="nav-icon">⊞</span> Reports</a>
       <span class="nav-section-label">Account</span>
-      <a href="#" class="nav-link"><span class="nav-icon">◈</span> Settings</a>
+      <a href="profile.html" class="nav-link"><span class="nav-icon">◈</span> Settings</a>
       <a href="#" class="nav-link"><span class="nav-icon">⊙</span> API Keys</a>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user">
-        <div class="sidebar-avatar">AK</div>
+        <div class="sidebar-avatar" data-user-initials>U</div>
         <div class="sidebar-user-info">
-          <div class="sidebar-user-name">Alex Kim</div>
-          <div class="sidebar-user-role">Data Explorer</div>
+          <div class="sidebar-user-name" data-user-name>User</div>
+          <div class="sidebar-user-role" data-user-role>Data Explorer</div>
         </div>
       </div>
     </div>
@@ -343,15 +342,14 @@
   </main>
 
 </div>
-
+<script src="../js/config.js"></script>
 <script src="../js/script.js"></script>
 <script>
  
-  const API_BASE_URL = "http://127.0.0.1:8000";
 
   async function loadHistory() {
     try {
-      const response = await fetch(`${API_BASE_URL}/datasets`);
+      const response = await apiFetch("/datasets");
 
       if (!response.ok) {
         throw new Error("Failed to load datasets");
@@ -491,8 +489,7 @@
   }
 
   function openAnalysis(id) {
-    showToast('◈ Opening analysis workspace…');
-    setTimeout(() => window.location.href = `analysis.html?dataset=${id}`, 500);
+    window.location.href = `analysis.html?dataset=${id}`;
   }
 
   function rerunAnalysis(id) {
@@ -506,7 +503,7 @@
     e.stopPropagation();
 
     try {
-      const response = await fetch(`${API_BASE_URL}/datasets/${id}`, {
+      const response = await apiFetch(`/datasets/${id}`, {
         method: "DELETE"
       });
 
@@ -582,7 +579,10 @@
 
 
   // Init
+  requireAuth();
+  setupAdminVisibility();
   loadHistory();
+  updateUserUI();
 </script>
 </body>
 </html>

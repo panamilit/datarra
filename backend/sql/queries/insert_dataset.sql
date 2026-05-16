@@ -7,7 +7,8 @@ INSERT INTO datasets (
     file_size,
     row_count,
     column_count,
-    columns_json
+    columns_json,
+    user_id
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;

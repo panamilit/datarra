@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Datarra — Admin Login</title>
+  <title>Datarra — Login</title>
   <link rel="stylesheet" href="../css/style.css" />
   <style>
     .login-shell {
@@ -13,6 +13,7 @@
       justify-content: center;
       padding: var(--sp-xl);
     }
+
     .login-card {
       width: min(520px, 100%);
       background: var(--grad-card);
@@ -23,33 +24,69 @@
       position: relative;
       overflow: hidden;
     }
+
     .login-card::before {
       content: '';
       position: absolute;
-      top: -30px; right: -30px;
-      width: 220px; height: 220px;
+      top: -30px;
+      right: -30px;
+      width: 220px;
+      height: 220px;
       background: radial-gradient(circle, rgba(180,48,72,0.16) 0%, transparent 70%);
       pointer-events: none;
     }
+
     .login-card h1 {
       font-family: var(--font-display);
       font-size: 28px;
       margin-bottom: var(--sp-sm);
     }
+
     .login-card p {
       color: var(--clr-text-dim);
       margin-bottom: var(--sp-lg);
       line-height: 1.55;
     }
+
+    .auth-tabs {
+      display: flex;
+      gap: var(--sp-sm);
+      margin-bottom: var(--sp-lg);
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: var(--r-md);
+      border: 1px solid var(--clr-border);
+      background: var(--clr-glass);
+      color: var(--clr-text-dim);
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all var(--dur-mid) var(--ease-out);
+    }
+
+    .auth-tab.active {
+      color: var(--clr-text);
+      border-color: var(--clr-border-hi);
+      background: rgba(180,48,72,0.12);
+    }
+
     .login-form {
       display: grid;
       gap: var(--sp-md);
     }
+
+    .hidden {
+      display: none;
+    }
+
     .login-note {
       font-size: 13px;
       color: var(--clr-text-dim);
       margin-top: var(--sp-sm);
     }
+
     .login-footer {
       margin-top: var(--sp-lg);
       display: flex;
@@ -58,6 +95,7 @@
       gap: var(--sp-sm);
       flex-wrap: wrap;
     }
+
     .login-error {
       color: var(--clr-red);
       font-size: 13px;
@@ -68,49 +106,166 @@
 <body>
 <div class="login-shell">
   <div class="login-card animate-up">
-    <h1>Admin Login</h1>
-    <p>Enter your credentials to continue to the Datarra admin panel.</p>
+    <h1 id="auth-title">Welcome back</h1>
+    <p id="auth-subtitle">Sign in to continue working with your datasets.</p>
 
-    <form class="login-form" id="login-form">
-      <div>
-        <label for="login-user" class="login-label">Username</label>
-        <input class="input" id="login-user" name="username" type="text" placeholder="admin" autocomplete="username" required />
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="login-tab" type="button">Login</button>
+      <button class="auth-tab" id="register-tab" type="button">Register</button>
+    </div>
+
+    <form class="login-form" id="auth-form">
+      <div id="display-name-wrap" class="hidden">
+        <label for="display-name" class="login-label">Display name</label>
+        <input class="input" id="display-name" type="text" placeholder="Max" autocomplete="name" />
       </div>
+
       <div>
-        <label for="login-pass" class="login-label">Password</label>
-        <input class="input" id="login-pass" name="password" type="password" placeholder="********" autocomplete="current-password" required />
+        <label for="email" class="login-label">Email</label>
+        <input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
       </div>
-      <div class="login-error" id="login-error"></div>
+
+      <div>
+        <label for="password" class="login-label">Password</label>
+        <input class="input" id="password" type="password" placeholder="********" autocomplete="current-password" required />
+      </div>
+
+      <div class="login-error" id="auth-error"></div>
+
       <div class="login-footer">
-        <button type="submit" class="btn btn-solid">Sign in</button>
-        <span class="login-note">Use <strong>admin / password123</strong> to sign in.</span>
+        <button type="submit" class="btn btn-solid" id="submit-btn">Sign in</button>
+        <span class="login-note" id="auth-note">Use your Datarra account.</span>
       </div>
     </form>
   </div>
 </div>
-
+<script src="../js/config.js"></script>
 <script src="../js/script.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    if (isAdminAuthenticated()) {
-      window.location.replace('admin.html');
-      return;
+  let mode = "login";
+
+  const loginTab = document.getElementById("login-tab");
+  const registerTab = document.getElementById("register-tab");
+  const title = document.getElementById("auth-title");
+  const subtitle = document.getElementById("auth-subtitle");
+  const displayNameWrap = document.getElementById("display-name-wrap");
+  const submitBtn = document.getElementById("submit-btn");
+  const note = document.getElementById("auth-note");
+  const errorEl = document.getElementById("auth-error");
+  const form = document.getElementById("auth-form");
+
+  function setMode(nextMode) {
+    mode = nextMode;
+    errorEl.textContent = "";
+
+    if (mode === "login") {
+      loginTab.classList.add("active");
+      registerTab.classList.remove("active");
+      displayNameWrap.classList.add("hidden");
+      title.textContent = "Welcome back";
+      subtitle.textContent = "Sign in to continue working with your datasets.";
+      submitBtn.textContent = "Sign in";
+      note.textContent = "Use your Datarra account.";
+    } else {
+      registerTab.classList.add("active");
+      loginTab.classList.remove("active");
+      displayNameWrap.classList.remove("hidden");
+      title.textContent = "Create account";
+      subtitle.textContent = "Create a Datarra account to save and manage your datasets.";
+      submitBtn.textContent = "Create account";
+      note.textContent = "Password must be at least 8 characters.";
+    }
+  }
+
+  loginTab.addEventListener("click", () => setMode("login"));
+  registerTab.addEventListener("click", () => setMode("register"));
+
+  async function login(email, password) {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    if (!response.ok) {
+      throw new Error("Invalid email or password");
     }
 
-    const form = document.getElementById('login-form');
-    const errorEl = document.getElementById('login-error');
+    return response.json();
+  }
 
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const username = document.getElementById('login-user').value.trim();
-      const password = document.getElementById('login-pass').value;
+  async function register(displayName, email, password) {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        display_name: displayName,
+        email,
+        password
+      })
+    });
 
-      if (authenticateAdmin(username, password)) {
-        window.location.replace('admin.html');
-      } else {
-        errorEl.textContent = 'Invalid username or password. Please try again.';
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.detail || "Registration failed");
+    }
+
+    return response.json();
+  }
+
+  async function getMe(token) {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: {
+        "Authorization": `Bearer ${token}`
       }
     });
+
+    if (!response.ok) {
+      throw new Error("Failed to load user profile");
+    }
+
+    return response.json();
+  }
+
+  async function redirectAfterLogin(token) {
+    const user = await getMe(token);
+
+    localStorage.setItem("datarra_user", JSON.stringify(user));
+
+    window.location.href = "index.html";
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    errorEl.textContent = "";
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const displayName = document.getElementById("display-name").value.trim();
+
+    try {
+      if (mode === "register") {
+        if (!displayName) {
+          throw new Error("Display name is required");
+        }
+
+        await register(displayName, email, password);
+      }
+
+      const loginData = await login(email, password);
+
+      localStorage.setItem("datarra_token", loginData.access_token);
+
+      await redirectAfterLogin(loginData.access_token);
+
+    } catch (error) {
+      errorEl.textContent = error.message;
+    }
   });
 </script>
 </body>

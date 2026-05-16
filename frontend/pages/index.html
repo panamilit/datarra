@@ -96,23 +96,20 @@
 
       <span class="nav-section-label">Account</span>
 
-      <a href="#" class="nav-link">
+      <a href="profile.html" class="nav-link">
         <span class="nav-icon">◈</span> Settings
       </a>
       <a href="#" class="nav-link">
         <span class="nav-icon">⊙</span> API Keys
       </a>
-      <a href="admin.html" class="nav-link">
-        <span class="nav-icon">♛</span> Admin
-      </a>
     </nav>
 
     <div class="sidebar-footer">
       <div class="sidebar-user">
-        <div class="sidebar-avatar">MM</div>
+        <div class="sidebar-avatar" data-user-initials>U</div>
         <div class="sidebar-user-info">
-          <div class="sidebar-user-name">Max Makarov</div>
-          <div class="sidebar-user-role">Admin</div>
+          <div class="sidebar-user-name" data-user-name>User</div>
+          <div class="sidebar-user-role" data-user-role>Data Explorer</div>
         </div>
       </div>
     </div>
@@ -343,9 +340,10 @@
   </main>
 
 </div><!-- .app-shell -->
-
+<script src="../js/config.js"></script>
 <script src="../js/script.js"></script>
 <script>
+  updateUserUI();
   // Animate stat counters on load
   const targets = { 'stat-datasets': 47, 'stat-reports': 128, 'stat-sessions': 93 };
   Object.entries(targets).forEach(([id, target]) => {

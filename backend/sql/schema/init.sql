@@ -1,3 +1,5 @@
+/* TABLE: datasets  */
+
 CREATE TABLE datasets (
     id SERIAL PRIMARY KEY,
     file_id UUID NOT NULL UNIQUE,
@@ -14,3 +16,21 @@ ALTER TABLE datasets
 ADD COLUMN row_count INTEGER,
 ADD COLUMN column_count INTEGER,
 ADD COLUMN columns_json JSONB;
+
+
+
+ALTER TABLE datasets
+ADD COLUMN user_id INTEGER REFERENCES users(id);
+
+
+/* TABLE: users  */
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash TEXT,
+    auth_provider VARCHAR(50) DEFAULT 'local',
+    google_id VARCHAR(255),
+    is_admin BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
