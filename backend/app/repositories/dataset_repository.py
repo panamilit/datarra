@@ -131,3 +131,26 @@ def delete_dataset_by_file_id(file_id: str, user_id: int) -> str | None:
     finally:
         cur.close()
         conn.close()
+
+
+def get_dataset_path_by_file_id(file_id: str, user_id: int) -> dict | None:
+    query = load_sql_query("sql/queries/get_dataset_path_by_file_id.sql")
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(query, (file_id, user_id))
+        row = cur.fetchone()
+
+        if not row:
+            return None
+
+        return {
+            "file_path": row[0],
+            "file_type": row[1],
+        }
+
+    finally:
+        cur.close()
+        conn.close()

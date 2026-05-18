@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import datasets, auth
+from app.routers import datasets, auth, analysis
 
 app = FastAPI()
 
@@ -17,6 +17,7 @@ app.add_middleware(
 
 app.include_router(datasets.router)
 app.include_router(auth.router)
+app.include_router(analysis.router)
 
 @app.get("/")
 def root():
