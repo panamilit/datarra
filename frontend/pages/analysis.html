@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Datarra — Workspace</title>
+  <title>Datarra - Analysis</title>
   <link rel="stylesheet" href="../css/style.css" />
   <style>
     /* ── Analysis Layout ── */
@@ -709,7 +709,6 @@
 <script src="../js/config.js"></script>
 <script src="../js/script.js"></script>
 <script>
-  // ── State ──────────────────────────────────────────
   let datasetLoaded = false;
   let currentDataset = null;
 
@@ -717,22 +716,28 @@
   setupAdminVisibility();
   updateUserUI();
 
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
     const params = new URLSearchParams(window.location.search);
     const datasetId = params.get("dataset");
 
     if (datasetId) {
-      loadDatasetFromHistory(datasetId);
+      await openDatasetById(datasetId);
     }
   });
 
   function triggerUpload() {
-    document.getElementById("file-input").click();
+    const input = document.getElementById("file-input");
+    if (!input) {
+      console.error("file-input not found");
+      return;
+    }
+    input.click();
   }
 
   async function handleFileSelect(event) {
-    const file = event.target.files[0];
+    event.preventDefault();
 
+    const file = event.target.files[0];
     if (!file) return;
 
     await uploadDataset(file);
@@ -753,7 +758,6 @@
     handleDragLeave();
 
     const file = event.dataTransfer.files[0];
-
     if (!file) return;
 
     await uploadDataset(file);
@@ -761,7 +765,7 @@
 
   async function uploadDataset(file) {
     showProcessing();
-    showWorkspaceStatus("Uploading dataset…");
+    setWorkspaceStatus("Uploading dataset…");
 
     try {
       const formData = new FormData();
@@ -776,29 +780,45 @@
         throw new Error(await getApiErrorMessage(response, "Upload failed. Please check the file format."));
       }
 
-      const rawDataset = await response.json();
-      const dataset = normalizeDataset(rawDataset, file);
+      const uploadedDataset = await response.json();
+      console.log("UPLOAD RESPONSE:", uploadedDataset);
 
-      displayLoadedDataset(dataset);
+      let fileId = findFileId(uploadedDataset);
 
-      addAIMessage(
-        `I've loaded <strong>${escapeHtml(dataset.filename)}</strong> — ${dataset.rows.toLocaleString()} rows and ${dataset.cols} columns. You can now run EDA, missing values, summary stats, or ask me about the dataset.`
-      );
+      if (!fileId) {
+        const listResponse = await apiFetch("/datasets");
+
+        if (!listResponse || !listResponse.ok) {
+          throw new Error("Dataset uploaded, but failed to reload dataset list.");
+        }
+
+        const datasets = await listResponse.json();
+        const latestDataset = datasets[0];
+
+        if (!latestDataset || !latestDataset.file_id) {
+          throw new Error("Dataset uploaded, but could not find it in history.");
+        }
+
+        fileId = latestDataset.file_id;
+      }
+
+      setWorkspaceStatus("Opening uploaded dataset…");
+      window.location.href = `analysis.html?dataset=${encodeURIComponent(fileId)}`;
 
     } catch (error) {
       console.error(error);
-      showWorkspaceStatus(error.message || "Upload failed. Please check the file format.", "error");
+      setWorkspaceStatus(error.message || "Upload failed.", "error");
     } finally {
       hideProcessing();
     }
   }
 
-  async function loadDatasetFromHistory(datasetId) {
+  async function openDatasetById(fileId) {
     showProcessing();
-    showWorkspaceStatus("Opening dataset…");
+    setWorkspaceStatus("Opening dataset…");
 
     try {
-      const response = await apiFetch(`/datasets/${datasetId}`);
+      const response = await apiFetch(`/datasets/${fileId}`);
 
       if (!response || !response.ok) {
         throw new Error(await getApiErrorMessage(response, "Failed to open dataset."));
@@ -809,48 +829,48 @@
 
       displayLoadedDataset(dataset);
 
-      addAIMessage(
-        `I've opened <strong>${escapeHtml(dataset.filename)}</strong> from your history — ${dataset.rows.toLocaleString()} rows and ${dataset.cols} columns.`
-      );
-
     } catch (error) {
       console.error(error);
-      showWorkspaceStatus(error.message || "Failed to open dataset.", "error");
+      setWorkspaceStatus(error.message || "Failed to open dataset.", "error");
     } finally {
       hideProcessing();
     }
   }
 
   function normalizeDataset(rawDataset, file = null) {
-    const columns = rawDataset.columns || rawDataset.columns_json || [];
-    const missingValues = rawDataset.missing_values || rawDataset.missing_values_json || {};
-    const filename = rawDataset.original_name || rawDataset.filename || file?.name || "Dataset";
+    const columns = parseMaybeJson(rawDataset.columns || rawDataset.columns_json || []);
+    const missingValues = parseMaybeJson(rawDataset.missing_values || rawDataset.missing_values_json || {});
+    const filename = rawDataset.original_name || rawDataset.filename || rawDataset.dataset || file?.name || "Dataset";
     const rows = Number(rawDataset.row_count ?? rawDataset.rows ?? 0);
-    const cols = Number(rawDataset.column_count ?? (Array.isArray(columns) ? columns.length : 0));
-    const size = Number(rawDataset.file_size || file?.size || 0);
-    const nullPercent = calculateNullPercent(missingValues, rows, cols);
+    const cols = Number(rawDataset.column_count ?? rawDataset.cols ?? (Array.isArray(columns) ? columns.length : 0));
+    const size = Number(rawDataset.file_size || rawDataset.size || file?.size || 0);
 
     return {
       ...rawDataset,
+      file_id: findFileId(rawDataset),
       filename,
       rows,
       cols,
       size,
-      columns,
-      missingValues,
-      nullPercent
+      file_type: rawDataset.file_type || rawDataset.type || "",
+      columns: Array.isArray(columns) ? columns : [],
+      missingValues: missingValues && typeof missingValues === "object" ? missingValues : {},
+      nullPercent: calculateNullPercent(missingValues, rows, cols)
     };
   }
 
-  async function getApiErrorMessage(response, fallback) {
-    if (!response) return fallback;
+  function findFileId(value) {
+    if (!value || typeof value !== "object") return null;
 
-    try {
-      const data = await response.json();
-      return data.detail || fallback;
-    } catch (_) {
-      return fallback;
+    if (value.file_id) return value.file_id;
+    if (value.fileId) return value.fileId;
+    if (value.dataset_file_id) return value.dataset_file_id;
+
+    if (value.dataset && typeof value.dataset === "object") {
+      return findFileId(value.dataset);
     }
+
+    return null;
   }
 
   function displayLoadedDataset(dataset) {
@@ -867,9 +887,14 @@
     document.getElementById("ds-nulls").textContent = dataset.nullPercent;
 
     document.getElementById("btn-reset").style.display = "";
-
     enableAnalysisButtons();
-    showWorkspaceStatus(`${dataset.filename} loaded · ${dataset.rows.toLocaleString()} rows`);
+    clearResults();
+
+    setWorkspaceStatus(`${dataset.filename} loaded · ${dataset.rows.toLocaleString()} rows`);
+
+    addAIMessage(
+      `I've loaded <strong>${escapeHtml(dataset.filename)}</strong> — ${dataset.rows.toLocaleString()} rows and ${dataset.cols} columns. You can now run analysis from the left panel.`
+    );
   }
 
   function enableAnalysisButtons() {
@@ -892,16 +917,20 @@
     document.getElementById("dataset-info").classList.remove("visible");
     document.getElementById("btn-reset").style.display = "none";
 
-    showWorkspaceStatus("Upload a dataset to begin");
+    setWorkspaceStatus("Upload a dataset to begin");
     clearResults();
     disableAnalysisButtons();
   }
 
-  function runAnalysis(type) {
+  async function runAnalysis(type) {
     if (!datasetLoaded || !currentDataset) return;
 
-    const cfg = getAnalysisConfig(type);
-    if (!cfg) return;
+    const fileId = currentDataset.file_id;
+
+    if (!fileId && ["stats", "missing", "dtypes"].includes(type)) {
+      setWorkspaceStatus("Dataset id is missing. Reopen this dataset from History and try again.", "error");
+      return;
+    }
 
     const btnId = {
       eda: "hp-eda",
@@ -917,134 +946,223 @@
 
     btn.innerHTML = `<span class="hp-btn-name"><span class="spin"></span> Running…</span>`;
     btn.classList.add("loading");
-
     showProcessing();
 
-    setTimeout(() => {
-      document.getElementById("results-title").textContent = cfg.label;
-      document.getElementById("results-type").textContent = currentDataset.filename;
-      document.getElementById("results-type").style.display = "";
-      document.getElementById("btn-clear-results").style.display = "";
-      document.getElementById("results-body").innerHTML = cfg.html;
+    try {
+      if (type === "stats") {
+        const data = await postAnalysis(`/analysis/${fileId}/summary`);
+        renderSummaryResults(data);
+      } else if (type === "missing") {
+        const data = await postAnalysis(`/analysis/${fileId}/missing-values`);
+        renderMissingResults(data);
+      } else if (type === "dtypes") {
+        const data = await postAnalysis(`/analysis/${fileId}/dtypes`);
+        renderDtypeResults(data);
+      } else if (type === "eda") {
+        renderEdaOverview();
+      } else if (type === "outliers") {
+        renderComingSoonResult("Outlier Detection", "Outlier detection will be connected to a backend Python endpoint next.");
+      } else if (type === "correlation") {
+          const data = await postAnalysis(`/analysis/${fileId}/correlation`);
+          renderCorrelationResults(data);
+        }
 
+    } catch (error) {
+      console.error(error);
+      setWorkspaceStatus(error.message || "Analysis failed.", "error");
+    } finally {
       hideProcessing();
       btn.innerHTML = originalHtml;
       btn.classList.remove("loading");
-
-      addAIMessage(cfg.ai);
-    }, 500);
+    }
   }
 
-  function getAnalysisConfig(type) {
-    const dataset = currentDataset;
-    const columns = Array.isArray(dataset.columns) ? dataset.columns : [];
-    const missingEntries = Object.entries(dataset.missingValues || {});
-    const visibleColumns = columns.slice(0, 10);
+  async function postAnalysis(path) {
+    const response = await apiFetch(path, { method: "POST" });
 
-    const configs = {
-      eda: {
-        label: "EDA Report",
-        html: `
-          <div class="result-block">
-            <div class="result-block-header">Dataset Overview <span class="badge">Real metadata</span></div>
-            <div class="stat-rows">
-              ${renderStatRow("filename", dataset.filename)}
-              ${renderStatRow("rows", dataset.rows.toLocaleString())}
-              ${renderStatRow("columns", dataset.cols)}
-              ${renderStatRow("file_size", dataset.size ? formatSize(dataset.size) : "—")}
-              ${renderStatRow("null_rate", dataset.nullPercent)}
-            </div>
-          </div>
-          <div class="result-block">
-            <div class="result-block-header">Columns <span class="badge">${dataset.cols} columns</span></div>
-            ${renderColumnList(visibleColumns)}
-          </div>`,
-        ai: `EDA ready. I found <strong>${dataset.rows.toLocaleString()}</strong> rows and <strong>${dataset.cols}</strong> columns in <strong>${escapeHtml(dataset.filename)}</strong>.`
-      },
-
-      missing: {
-        label: "Missing Values",
-        html: `
-          <div class="result-block">
-            <div class="result-block-header">Missing Value Summary <span class="badge">Column-level</span></div>
-            ${
-              missingEntries.length
-                ? `<div class="stat-rows">${missingEntries.slice(0, 12).map(([key, value]) => renderStatRow(key, Number(value || 0).toLocaleString())).join("")}</div>`
-                : `<div class="empty-state"><div class="empty-title">No missing value data available</div><div class="empty-desc">The backend did not return missing value details for this dataset.</div></div>`
-            }
-          </div>`,
-        ai: missingEntries.length
-          ? `Missing value scan ready. Total null rate is approximately <strong>${dataset.nullPercent}</strong>.`
-          : `I do not have missing value details for this opened dataset yet. Upload responses include this now, but history metadata may need storing missing values later.`
-      },
-
-      stats: {
-        label: "Summary Statistics",
-        html: `
-          <div class="result-block">
-            <div class="result-block-header">Available Metadata <span class="badge">Current backend</span></div>
-            <div class="stat-rows">
-              ${renderStatRow("rows", dataset.rows.toLocaleString())}
-              ${renderStatRow("columns", dataset.cols)}
-              ${renderStatRow("file_type", dataset.file_type || "—")}
-              ${renderStatRow("size", dataset.size ? formatSize(dataset.size) : "—")}
-            </div>
-          </div>`,
-        ai: `Summary metadata is available. Full numeric statistics will need a backend analysis endpoint next.`
-      },
-
-      dtypes: {
-        label: "Data Types",
-        html: `
-          <div class="result-block">
-            <div class="result-block-header">Schema Preview <span class="badge">${dataset.cols} columns</span></div>
-            ${renderColumnList(visibleColumns)}
-          </div>`,
-        ai: `I can see the column names. Actual dtype detection should be added as a backend analysis endpoint next.`
-      },
-
-      outliers: {
-        label: "Outlier Detection",
-        html: renderComingSoon("Outlier detection will be connected to a backend Python analysis endpoint."),
-        ai: `Outlier detection needs a backend endpoint using pandas/numpy. The dataset is loaded and ready for that next step.`
-      },
-
-      correlation: {
-        label: "Correlation Matrix",
-        html: renderComingSoon("Correlation analysis will be connected to a backend Python analysis endpoint."),
-        ai: `Correlation analysis needs a backend endpoint that reads the stored dataset and calculates numeric correlations.`
-      }
-    };
-
-    return configs[type];
-  }
-
-  function renderStatRow(key, value) {
-    return `
-      <div class="stat-row">
-        <span class="sr-key">${escapeHtml(String(key))}</span>
-        <span class="sr-val">${escapeHtml(String(value))}</span>
-      </div>`;
-  }
-
-  function renderColumnList(columns) {
-    if (!columns.length) {
-      return `<div class="empty-state"><div class="empty-title">No columns found</div></div>`;
+    if (!response || !response.ok) {
+      throw new Error(await getApiErrorMessage(response, "Analysis failed."));
     }
 
-    return `
-      <div class="stat-rows">
-        ${columns.map((column, index) => renderStatRow(`#${index + 1}`, column)).join("")}
-      </div>`;
+    return response.json();
   }
 
-  function renderComingSoon(message) {
-    return `
-      <div class="empty-state">
-        <div class="empty-icon">◈</div>
-        <div class="empty-title">Backend analysis coming next</div>
-        <div class="empty-desc">${escapeHtml(message)}</div>
+  function renderSummaryResults(data) {
+    setResultHeader("Summary Statistics");
+
+    const summary = data.numeric_summary || {};
+    const columns = Object.keys(summary);
+
+    if (!columns.length) {
+      document.getElementById("results-body").innerHTML = renderEmptyBlock("No numeric summary available", "This dataset may not contain numeric columns.");
+      addAIMessage("I checked the dataset, but there are no numeric summary statistics available yet.");
+      return;
+    }
+
+    document.getElementById("results-body").innerHTML = `
+      <div class="result-block">
+        <div class="result-block-header">Numeric Summary <span class="badge">Real pandas output</span></div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>Column</th><th>Count</th><th>Mean</th><th>Std</th><th>Min</th><th>25%</th><th>50%</th><th>75%</th><th>Max</th></tr>
+            </thead>
+            <tbody>
+              ${columns.slice(0, 12).map(column => renderSummaryRow(column, summary[column])).join("")}
+            </tbody>
+          </table>
+        </div>
       </div>`;
+
+    addAIMessage(`Summary statistics are ready for <strong>${escapeHtml(currentDataset.filename)}</strong>. I found ${columns.length} numeric columns.`);
+  }
+
+  function renderSummaryRow(column, stats) {
+    return `
+      <tr>
+        <td class="mono">${escapeHtml(column)}</td>
+        <td class="mono">${formatValue(stats.count)}</td>
+        <td class="mono">${formatValue(stats.mean)}</td>
+        <td class="mono">${formatValue(stats.std)}</td>
+        <td class="mono">${formatValue(stats.min)}</td>
+        <td class="mono">${formatValue(stats["25%"])}</td>
+        <td class="mono">${formatValue(stats["50%"])}</td>
+        <td class="mono">${formatValue(stats["75%"])}</td>
+        <td class="mono">${formatValue(stats.max)}</td>
+      </tr>`;
+  }
+
+  function renderCorrelationResults(data) {
+    setResultHeader("Correlation Matrix");
+
+    const columns = data.columns || [];
+    const matrix = data.matrix || [];
+
+    if (!columns.length || !matrix.length) {
+      document.getElementById("results-body").innerHTML =
+        renderEmptyBlock("No numeric columns", "Correlation requires at least two numeric columns.");
+      return;
+    }
+
+    document.getElementById("results-body").innerHTML = `
+      <div class="result-block">
+        <div class="result-block-header">Pearson Correlation <span class="badge">Real pandas output</span></div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th></th>
+                ${columns.map(col => `<th>${escapeHtml(col)}</th>`).join("")}
+              </tr>
+            </thead>
+            <tbody>
+              ${matrix.map((row, i) => `
+                <tr>
+                  <td class="mono">${escapeHtml(columns[i])}</td>
+                  ${row.map(value => `
+                    <td class="mono">${Number(value).toFixed(3)}</td>
+                  `).join("")}
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    addAIMessage(
+      `Correlation matrix is ready for <strong>${escapeHtml(currentDataset.filename)}</strong>.`
+    );
+  }
+
+  function renderMissingResults(data) {
+    setResultHeader("Missing Values");
+
+    const missingValues = data.missing_values || {};
+    const missingPercent = data.missing_percent || {};
+    const entries = Object.entries(missingValues);
+
+    if (!entries.length) {
+      document.getElementById("results-body").innerHTML = renderEmptyBlock("No missing value data", "The backend did not return missing value details.");
+      return;
+    }
+
+    document.getElementById("results-body").innerHTML = `
+      <div class="result-block">
+        <div class="result-block-header">Missing Value Summary <span class="badge">${data.total_missing ?? 0} total</span></div>
+        <div class="stat-rows">
+          ${entries.slice(0, 20).map(([column, count]) => {
+            const pct = missingPercent[column] ?? 0;
+            return renderStatRow(column, `${Number(count).toLocaleString()} missing · ${pct}%`);
+          }).join("")}
+        </div>
+      </div>`;
+
+    addAIMessage(`Missing value analysis is ready. Total missing cells: <strong>${Number(data.total_missing || 0).toLocaleString()}</strong>.`);
+  }
+
+  function renderDtypeResults(data) {
+    setResultHeader("Data Types");
+
+    const dtypes = data.dtypes || {};
+    const entries = Object.entries(dtypes);
+
+    if (!entries.length) {
+      document.getElementById("results-body").innerHTML = renderEmptyBlock("No dtype data", "The backend did not return dtype information.");
+      return;
+    }
+
+    document.getElementById("results-body").innerHTML = `
+      <div class="result-block">
+        <div class="result-block-header">Schema Overview <span class="badge">Real pandas dtypes</span></div>
+        <table class="data-table">
+          <thead><tr><th>Column</th><th>Type</th></tr></thead>
+          <tbody>
+            ${entries.map(([column, dtype]) => `<tr><td class="mono">${escapeHtml(column)}</td><td><span class="chip chip-info">${escapeHtml(dtype)}</span></td></tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
+
+    addAIMessage(`Schema detection is ready. I found <strong>${entries.length}</strong> columns.`);
+  }
+
+  function renderEdaOverview() {
+    setResultHeader("EDA Report");
+
+    const columns = currentDataset.columns || [];
+
+    document.getElementById("results-body").innerHTML = `
+      <div class="result-block">
+        <div class="result-block-header">Dataset Overview <span class="badge">Loaded metadata</span></div>
+        <div class="stat-rows">
+          ${renderStatRow("filename", currentDataset.filename)}
+          ${renderStatRow("rows", currentDataset.rows.toLocaleString())}
+          ${renderStatRow("columns", currentDataset.cols)}
+          ${renderStatRow("file size", currentDataset.size ? formatSize(currentDataset.size) : "—")}
+          ${renderStatRow("null rate", currentDataset.nullPercent)}
+        </div>
+      </div>
+      <div class="result-block">
+        <div class="result-block-header">Column Preview <span class="badge">${columns.length} columns</span></div>
+        <div class="stat-rows">
+          ${columns.slice(0, 20).map((column, index) => renderStatRow(`#${index + 1}`, column)).join("")}
+        </div>
+      </div>`;
+
+    addAIMessage(`EDA overview is ready for <strong>${escapeHtml(currentDataset.filename)}</strong>. Next, we can expand this into deeper pandas profiling.`);
+  }
+
+  function renderComingSoonResult(title, message) {
+    setResultHeader(title);
+    document.getElementById("results-body").innerHTML = renderEmptyBlock("Backend analysis coming next", message);
+    addAIMessage(escapeHtml(message));
+  }
+
+  function setResultHeader(title) {
+    document.getElementById("results-title").textContent = title;
+    document.getElementById("results-type").textContent = currentDataset?.filename || "Dataset";
+    document.getElementById("results-type").style.display = "";
+    document.getElementById("btn-clear-results").style.display = "";
   }
 
   function clearResults() {
@@ -1067,7 +1185,6 @@
     if (!text) return;
 
     input.value = "";
-
     addUserMessage(text);
 
     if (!datasetLoaded) {
@@ -1075,9 +1192,7 @@
       return;
     }
 
-    addAIMessage(
-      `I can see <strong>${escapeHtml(currentDataset.filename)}</strong>. Right now I can summarize metadata and columns. Deeper AI analysis will come after we connect the backend analysis/chat endpoints.`
-    );
+    addAIMessage(`I can see <strong>${escapeHtml(currentDataset.filename)}</strong>. Run Summary Stats, Missing Values, or Data Types to get real backend analysis.`);
   }
 
   function sendSuggestedPrompt(prompt) {
@@ -1140,16 +1255,30 @@
 
       messages.appendChild(bubble);
       messages.scrollTop = messages.scrollHeight;
-    }, 450);
+    }, 350);
+  }
+
+  function renderStatRow(key, value) {
+    return `
+      <div class="stat-row">
+        <span class="sr-key">${escapeHtml(String(key))}</span>
+        <span class="sr-val">${escapeHtml(String(value))}</span>
+      </div>`;
+  }
+
+  function renderEmptyBlock(title, description) {
+    return `
+      <div class="empty-state">
+        <div class="empty-icon">◈</div>
+        <div class="empty-title">${escapeHtml(title)}</div>
+        <div class="empty-desc">${escapeHtml(description)}</div>
+      </div>`;
   }
 
   function calculateNullPercent(missingValues, rows, cols) {
     if (!missingValues || rows === 0 || cols === 0) return "—";
 
-    const totalMissing = Object.values(missingValues).reduce((sum, value) => {
-      return sum + Number(value || 0);
-    }, 0);
-
+    const totalMissing = Object.values(missingValues).reduce((sum, value) => sum + Number(value || 0), 0);
     const totalCells = rows * cols;
 
     if (totalCells === 0) return "—";
@@ -1161,6 +1290,35 @@
     if (!bytes) return "—";
     if (bytes > 1048576) return (bytes / 1048576).toFixed(1) + " MB";
     return (bytes / 1024).toFixed(0) + " KB";
+  }
+
+  function formatValue(value) {
+    if (value === null || value === undefined || value === "") return "—";
+    const number = Number(value);
+    if (!Number.isNaN(number)) return Number.isInteger(number) ? number.toLocaleString() : number.toFixed(3);
+    return escapeHtml(String(value));
+  }
+
+  function parseMaybeJson(value) {
+    if (!value) return Array.isArray(value) ? [] : {};
+    if (typeof value !== "string") return value;
+
+    try {
+      return JSON.parse(value);
+    } catch (_) {
+      return value;
+    }
+  }
+
+  async function getApiErrorMessage(response, fallback) {
+    if (!response) return fallback;
+
+    try {
+      const data = await response.json();
+      return data.detail || fallback;
+    } catch (_) {
+      return fallback;
+    }
   }
 
   function showProcessing() {
@@ -1178,16 +1336,14 @@
     setTimeout(() => {
       document.getElementById("proc-bar").classList.remove("active");
       document.getElementById("proc-fill").style.display = "none";
-    }, 300);
+    }, 250);
   }
 
-  function showWorkspaceStatus(message, type = "info") {
+  function setWorkspaceStatus(message, type = "info") {
     const status = document.getElementById("ws-status");
 
     status.textContent = message;
-    status.style.color = type === "error"
-      ? "var(--clr-red)"
-      : "var(--clr-text-dim)";
+    status.style.color = type === "error" ? "var(--clr-red)" : "var(--clr-text-dim)";
   }
 
   function getTime() {
