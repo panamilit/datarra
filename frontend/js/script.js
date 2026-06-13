@@ -1,11 +1,5 @@
-/**
- * DataBerry — Shared JavaScript
- * Global utilities used across all pages
- */
 
-// ── Counter animation ────────────────────────────────────
 /**
- * Animate a number element from 0 to target.
  * @param {HTMLElement} el
  * @param {number} target
  * @param {number} duration  ms
@@ -25,7 +19,6 @@ function animateCounter(el, target, duration = 1000) {
   requestAnimationFrame(tick);
 }
 
-// ── Keyboard shortcuts (global) ──────────────────────────
 document.addEventListener('keydown', (e) => {
   const meta = e.metaKey || e.ctrlKey;
   if (!meta) return;
@@ -39,11 +32,9 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault();
       window.location.href = 'history.html';
       break;
-    // Add more shortcuts here as needed
   }
 });
 
-// ── Scroll reveal ────────────────────────────────────────
 function initScrollReveal() {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -84,9 +75,7 @@ function logoutAdmin() {
   window.location.replace('login.html');
 }
 
-// ── Init on DOM ready ────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Mark the current nav link as active based on URL
   const path = window.location.pathname.split('/').pop();
   document.querySelectorAll('.nav-link').forEach(link => {
     const href = link.getAttribute('href');
