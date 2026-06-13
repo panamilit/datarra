@@ -6,7 +6,6 @@
   <title>Datarra - Analysis</title>
   <link rel="stylesheet" href="../css/style.css" />
   <style>
-    /* ── Analysis Layout ── */
     .analysis-layout {
       display: grid;
       grid-template-columns: 220px 1fr 320px;
@@ -18,7 +17,6 @@
       padding-bottom: var(--sp-xl);
     }
 
-    /* Upload banner */
     .upload-bar {
       grid-column: 1 / -1;
       padding: 0;
@@ -73,7 +71,6 @@
       margin-top: var(--sp-sm);
     }
 
-    /* Dataset info card */
     .dataset-info {
       grid-column: 1 / -1;
       display: none;
@@ -104,7 +101,6 @@
     .ds-val { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--clr-text); }
     .ds-lbl { font-size: 11px; color: var(--clr-text-dim); }
 
-    /* Left hotkeys panel */
     .hotkeys-panel {
       background: var(--clr-abyss);
       border: 1px solid var(--clr-border);
@@ -172,7 +168,6 @@
       margin: var(--sp-xs) 0;
     }
 
-    /* Center results panel */
     .results-panel {
       background: var(--clr-abyss);
       border: 1px solid var(--clr-border);
@@ -207,7 +202,6 @@
       gap: var(--sp-lg);
     }
 
-    /* Empty state */
     .empty-state {
       display: flex;
       flex-direction: column;
@@ -224,7 +218,6 @@
     .empty-title { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
     .empty-desc { font-size: 13px; color: var(--clr-text-dim); max-width: 260px; }
 
-    /* Result blocks */
     .result-block {
       animation: slide-up 0.4s var(--ease-out) both;
     }
@@ -248,7 +241,6 @@
       color: var(--clr-spark);
     }
 
-    /* Mock chart bars */
     .bar-chart {
       display: flex;
       align-items: flex-end;
@@ -277,7 +269,6 @@
 
     .bar-label { font-size: 9px; color: var(--clr-text-ghost); font-family: var(--font-mono); }
 
-    /* Stat rows */
     .stat-rows { display: flex; flex-direction: column; gap: 6px; }
 
     .stat-row {
@@ -294,7 +285,6 @@
     .sr-bar { flex: 2; height: 4px; background: var(--clr-raised); border-radius: var(--r-full); overflow: hidden; }
     .sr-fill { height: 100%; background: var(--grad-accent); border-radius: var(--r-full); }
 
-    /* Heatmap */
     .heatmap {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -316,7 +306,6 @@
 
     .hm-cell:hover { transform: scale(1.1); }
 
-    /* Chat panel */
     .chat-panel {
       background: var(--clr-abyss);
       border: 1px solid var(--clr-border);
@@ -476,7 +465,6 @@
       box-shadow: var(--sh-glow);
     }
 
-    /* Processing overlay */
     .processing-bar {
       height: 3px;
       background: transparent;
@@ -498,7 +486,6 @@
       to   { width: 100%; }
     }
 
-    /* Loading spinner for buttons */
     .spin {
       display: inline-block;
       width: 12px; height: 12px;
@@ -524,7 +511,6 @@
 <body>
 <div class="app-shell">
 
-  <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-mark"><img src="../assets/logo.png" alt="Description of the image" width="50" height="50"></div>
@@ -554,10 +540,8 @@
     </div>
   </aside>
 
-  <!-- MAIN -->
   <main class="main" style="overflow:hidden;">
 
-    <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-left">
         <span class="topbar-title">Analysis Workspace</span>
@@ -569,16 +553,13 @@
       </div>
     </div>
 
-    <!-- PROCESSING BAR -->
     <div class="processing-bar" id="proc-bar">
       <div class="processing-fill" id="proc-fill" style="display:none"></div>
     </div>
 
     <div class="analysis-layout">
 
-      <!-- UPLOAD / DATASET BAR -->
       <div class="upload-bar">
-        <!-- Drop Zone (shown when no dataset) -->
         <div class="drop-zone" id="drop-zone"
              onclick="triggerUpload()"
              ondragover="handleDragOver(event)"
@@ -596,7 +577,6 @@
           </div>
         </div>
 
-        <!-- Dataset Info (shown after upload) -->
         <div class="dataset-info" id="dataset-info">
           <div class="dataset-meta">
             <div class="dataset-name-block">
@@ -614,7 +594,6 @@
         <input type="file" id="file-input" accept=".csv,.xlsx,.json,.parquet,.tsv" style="display:none" onchange="handleFileSelect(event)"/>
       </div>
 
-      <!-- LEFT: HOTKEYS PANEL -->
       <div class="hotkeys-panel">
         <div class="hp-title">Quick Analysis</div>
 
@@ -659,7 +638,6 @@
         </button>
       </div>
 
-      <!-- CENTER: RESULTS PANEL -->
       <div class="results-panel">
         <div class="results-header">
           <span class="results-title" id="results-title">Results</span>
@@ -675,7 +653,6 @@
         </div>
       </div>
 
-      <!-- RIGHT: CHAT PANEL -->
       <div class="chat-panel">
         <div class="chat-header">
           <div class="chat-ai-dot"></div>
@@ -683,7 +660,6 @@
           <span class="chat-model">berry-3-pro</span>
         </div>
         <div class="chat-messages" id="chat-messages">
-          <!-- Initial AI greeting -->
           <div class="chat-bubble bubble-ai">
             <div class="bubble-avatar">AI</div>
             <div>
@@ -702,10 +678,11 @@
         </div>
       </div>
 
-    </div><!-- .analysis-layout -->
+    </div>
   </main>
 
 </div>
+
 <script src="../js/config.js"></script>
 <script src="../js/script.js"></script>
 <script>

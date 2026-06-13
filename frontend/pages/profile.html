@@ -10,13 +10,11 @@
       display: grid;
       gap: var(--sp-lg);
     }
-
     .profile-panel {
       display: grid;
       grid-template-columns: 1fr 360px;
       gap: var(--sp-lg);
     }
-
     .profile-card {
       background: var(--grad-card);
       border: 1px solid var(--clr-border);
@@ -26,7 +24,6 @@
       position: relative;
       overflow: hidden;
     }
-
     .profile-card::before {
       content: '';
       position: absolute;
@@ -35,7 +32,6 @@
       background: radial-gradient(circle, rgba(180,48,72,0.2) 0%, transparent 65%);
       pointer-events: none;
     }
-
     .profile-header {
       display: flex;
       align-items: center;
@@ -43,7 +39,6 @@
       margin-bottom: var(--sp-lg);
       flex-wrap: wrap;
     }
-
     .profile-avatar-large {
       width: 96px;
       height: 96px;
@@ -60,71 +55,60 @@
       box-shadow: 0 0 30px rgba(200,57,79,0.2);
       flex-shrink: 0;
     }
-
     .profile-name {
       font-family: var(--font-display);
       font-size: 32px;
       margin-bottom: 6px;
     }
-
     .profile-role {
       color: var(--clr-text-dim);
       font-size: 13px;
       letter-spacing: 0.5px;
       text-transform: uppercase;
     }
-
     .profile-form {
       display: grid;
       gap: var(--sp-md);
     }
-
     .profile-form label {
       display: block;
       margin-bottom: 6px;
       font-size: 13px;
       color: var(--clr-text-dim);
     }
-
     .profile-actions {
       display: flex;
       flex-wrap: wrap;
       gap: var(--sp-sm);
       margin-top: var(--sp-md);
     }
-
     .stats-card-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: var(--sp-md);
     }
-
     .settings-card {
       background: var(--grad-card);
       border: 1px solid var(--clr-border);
       border-radius: var(--r-lg);
       padding: var(--sp-lg);
     }
-
     .settings-card h3 {
       margin-bottom: var(--sp-sm);
       font-size: 16px;
       color: var(--clr-text);
       font-weight: 600;
     }
-
     .settings-card p {
       font-size: 13px;
       color: var(--clr-text-dim);
       line-height: 1.6;
     }
-
     .profile-note {
       font-size: 13px;
       color: var(--clr-text-dim);
       margin-top: var(--sp-sm);
     }
-
     .profile-status-row {
       display: flex;
       justify-content: space-between;
@@ -155,7 +139,6 @@
 <body>
 <div class="app-shell">
 
-  <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-mark"><img src="../assets/logo.png" alt="Description of the image" width="50" height="50"></div>
@@ -192,7 +175,6 @@
     </div>
   </aside>
 
-  <!-- MAIN -->
   <main class="main">
     <div class="topbar">
       <div class="topbar-left">
@@ -262,6 +244,7 @@
     </div>
   </main>
 </div>
+
 <script src="../js/config.js"></script>
 <script src="../js/script.js"></script>
 <script>

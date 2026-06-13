@@ -11,14 +11,11 @@
       flex-direction: column;
       gap: var(--sp-lg);
     }
-
-    /* Summary row */
     .summary-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: var(--sp-md);
     }
-
     .summary-card {
       background: var(--grad-card);
       border: 1px solid var(--clr-border);
@@ -29,12 +26,10 @@
       gap: var(--sp-md);
       transition: all var(--dur-mid) var(--ease-out);
     }
-
     .summary-card:hover {
       border-color: var(--clr-border-hi);
       box-shadow: var(--sh-hover);
     }
-
     .sc-icon {
       width: 48px; height: 48px;
       border-radius: var(--r-md);
@@ -42,12 +37,10 @@
       font-size: 22px;
       flex-shrink: 0;
     }
-
     .sc-icon-1 { background: rgba(180,48,72,0.15); border: 1px solid var(--clr-border-hi); }
     .sc-icon-2 { background: rgba(96,152,212,0.15); border: 1px solid rgba(96,152,212,0.3); }
     .sc-icon-3 { background: rgba(76,175,130,0.15); border: 1px solid rgba(76,175,130,0.3); }
 
-    .sc-content {}
     .sc-value {
       font-family: var(--font-display);
       font-weight: 700;
@@ -56,20 +49,17 @@
     }
     .sc-label { font-size: 12px; color: var(--clr-text-dim); }
 
-    /* Toolbar */
     .history-toolbar {
       display: flex;
       align-items: center;
       gap: var(--sp-md);
       flex-wrap: wrap;
     }
-
     .search-wrap {
       position: relative;
       flex: 1;
       min-width: 200px;
     }
-
     .search-icon {
       position: absolute;
       left: 12px; top: 50%;
@@ -78,11 +68,9 @@
       font-size: 14px;
       pointer-events: none;
     }
-
     .search-input {
       padding-left: 36px;
     }
-
     .filter-btn {
       display: flex;
       align-items: center;
@@ -98,24 +86,19 @@
       font-family: var(--font-body);
       white-space: nowrap;
     }
-
     .filter-btn:hover, .filter-btn.active {
       color: var(--clr-text);
       background: rgba(180,48,72,0.1);
       border-color: var(--clr-border-hi);
     }
-
     .filter-btn.active {
       color: var(--clr-spark);
     }
-
-    /* History list */
     .history-list {
       display: flex;
       flex-direction: column;
       gap: var(--sp-sm);
     }
-
     .history-card {
       background: var(--grad-card);
       border: 1px solid var(--clr-border);
@@ -130,7 +113,6 @@
       overflow: hidden;
       cursor: pointer;
     }
-
     .history-card::before {
       content: '';
       position: absolute;
@@ -138,20 +120,17 @@
       height: 1px;
       background: linear-gradient(90deg, transparent, rgba(255,128,150,0.2), transparent);
     }
-
     .history-card:hover {
       border-color: var(--clr-border-hi);
       box-shadow: var(--sh-hover);
       transform: translateX(2px);
     }
-
     .history-card.deleting {
       opacity: 0;
       transform: translateX(20px);
       transition: all 0.3s var(--ease-in);
       pointer-events: none;
     }
-
     .hc-type-icon {
       width: 44px; height: 44px;
       border-radius: var(--r-md);
@@ -161,8 +140,6 @@
       font-size: 18px;
       flex-shrink: 0;
     }
-
-    .hc-main {}
     .hc-name {
       font-family: var(--font-display);
       font-weight: 600;
@@ -170,14 +147,12 @@
       margin-bottom: 4px;
       color: var(--clr-text);
     }
-
     .hc-meta {
       display: flex;
       align-items: center;
       gap: var(--sp-md);
       flex-wrap: wrap;
     }
-
     .hc-meta-item {
       display: flex;
       align-items: center;
@@ -185,22 +160,18 @@
       font-size: 12px;
       color: var(--clr-text-dim);
     }
-
     .hc-summary {
       font-size: 13px;
       color: var(--clr-text-dim);
       margin-top: 6px;
       line-height: 1.5;
     }
-
     .hc-actions {
       display: flex;
       flex-direction: column;
       gap: var(--sp-xs);
       flex-shrink: 0;
     }
-
-    /* Empty history */
     .empty-history {
       display: flex;
       flex-direction: column;
@@ -211,8 +182,6 @@
       text-align: center;
       opacity: 0.5;
     }
-
-    /* Toast */
     .toast {
       position: fixed;
       bottom: var(--sp-lg);
@@ -250,7 +219,6 @@
 <body>
 <div class="app-shell">
 
-  <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-mark"><img src="../assets/logo.png" alt="Description of the image" width="50" height="50"></div>
@@ -280,9 +248,7 @@
     </div>
   </aside>
 
-  <!-- MAIN -->
   <main class="main">
-    <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-left">
         <span class="topbar-title">Analysis History</span>
@@ -296,7 +262,6 @@
 
     <div class="page-content history-layout">
 
-      <!-- SUMMARY CARDS -->
       <div class="summary-row animate-up">
         <div class="summary-card">
           <div class="sc-icon sc-icon-1">◷</div>
@@ -321,7 +286,6 @@
         </div>
       </div>
 
-      <!-- TOOLBAR -->
       <div class="history-toolbar animate-up animate-up-1">
         <div class="search-wrap">
           <span class="search-icon">⊙</span>
@@ -332,16 +296,13 @@
         <button class="filter-btn" data-filter="xlsx" onclick="setFilter('xlsx', this)">XLSX</button>
         <button class="filter-btn" data-filter="json" onclick="setFilter('json', this)">JSON</button>
       </div>
-
-      <!-- HISTORY LIST -->
       <div class="history-list animate-up animate-up-2" id="history-list">
-        <!-- Populated by JS -->
       </div>
-
-    </div><!-- .page-content -->
+    </div>
   </main>
 
 </div>
+
 <script src="../js/config.js"></script>
 <script src="../js/script.js"></script>
 <script>
@@ -392,21 +353,6 @@
 
     return icons[fileType] || "⊕";
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   const STATUS_ICONS = {
     complete: { chip: 'chip-success', label: '✓ Complete' },
@@ -532,7 +478,6 @@
   }
 
   function showToast(message) {
-    // Remove existing toasts
     document.querySelectorAll('.toast').forEach(t => t.remove());
 
     const toast = document.createElement('div');
@@ -574,11 +519,6 @@
   }
 
 
-
-
-
-
-  // Init
   requireAuth();
   setupAdminVisibility();
   loadHistory();

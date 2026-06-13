@@ -13,7 +13,6 @@
       justify-content: center;
       padding: var(--sp-xl);
     }
-
     .login-card {
       width: min(520px, 100%);
       background: var(--grad-card);
@@ -24,7 +23,6 @@
       position: relative;
       overflow: hidden;
     }
-
     .login-card::before {
       content: '';
       position: absolute;
@@ -35,25 +33,21 @@
       background: radial-gradient(circle, rgba(180,48,72,0.16) 0%, transparent 70%);
       pointer-events: none;
     }
-
     .login-card h1 {
       font-family: var(--font-display);
       font-size: 28px;
       margin-bottom: var(--sp-sm);
     }
-
     .login-card p {
       color: var(--clr-text-dim);
       margin-bottom: var(--sp-lg);
       line-height: 1.55;
     }
-
     .auth-tabs {
       display: flex;
       gap: var(--sp-sm);
       margin-bottom: var(--sp-lg);
     }
-
     .auth-tab {
       flex: 1;
       padding: 10px 14px;
@@ -65,28 +59,23 @@
       font-family: var(--font-body);
       transition: all var(--dur-mid) var(--ease-out);
     }
-
     .auth-tab.active {
       color: var(--clr-text);
       border-color: var(--clr-border-hi);
       background: rgba(180,48,72,0.12);
     }
-
     .login-form {
       display: grid;
       gap: var(--sp-md);
     }
-
     .hidden {
       display: none;
     }
-
     .login-note {
       font-size: 13px;
       color: var(--clr-text-dim);
       margin-top: var(--sp-sm);
     }
-
     .login-footer {
       margin-top: var(--sp-lg);
       display: flex;
@@ -95,7 +84,6 @@
       gap: var(--sp-sm);
       flex-wrap: wrap;
     }
-
     .login-error {
       color: var(--clr-red);
       font-size: 13px;
@@ -103,6 +91,7 @@
     }
   </style>
 </head>
+
 <body>
 <div class="login-shell">
   <div class="login-card animate-up">
@@ -139,6 +128,7 @@
     </form>
   </div>
 </div>
+
 <script src="../js/config.js"></script>
 <script src="../js/script.js"></script>
 <script>
@@ -268,5 +258,6 @@
     }
   });
 </script>
+
 </body>
 </html>

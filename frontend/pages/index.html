@@ -6,7 +6,6 @@
   <title>Datarra - Dashboard</title>
   <link rel="stylesheet" href="../css/style.css"/>
   <style>
-    /* Page-specific */
     .hotkeys-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -61,7 +60,7 @@
 <body>
 <div class="app-shell">
 
-  <!-- SIDEBAR -->
+  
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-mark"><img src="../assets/logo.png" alt="Description of the image" width="50" height="50"></div>
@@ -115,9 +114,7 @@
     </div>
   </aside>
 
-  <!-- MAIN -->
   <main class="main">
-    <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-left">
         <span class="topbar-title">Dashboard</span>
@@ -129,10 +126,7 @@
       </div>
     </div>
 
-    <!-- PAGE CONTENT -->
     <div class="page-content">
-
-      <!-- PROFILE HERO -->
       <div class="profile-hero animate-up">
         <div class="profile-avatar-wrap">
           <div class="profile-avatar">MM</div>
@@ -150,7 +144,6 @@
           </div>
         </div>
 
-        <!-- Decorative sparkline -->
         <div style="margin-left:auto;opacity:0.5;z-index:1;">
           <svg width="120" height="60" viewBox="0 0 120 60" fill="none">
             <polyline points="0,50 20,38 40,42 60,22 80,28 100,10 120,18" stroke="#d94060" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -167,7 +160,6 @@
         </div>
       </div>
 
-      <!-- STATS GRID -->
       <div class="stats-grid animate-up animate-up-1">
         <div class="stat-card">
           <span class="stat-icon">◈</span>
@@ -195,10 +187,8 @@
         </div>
       </div>
 
-      <!-- MIDDLE ROW -->
       <div class="grid-2 animate-up animate-up-2">
 
-        <!-- RECENT ACTIVITY -->
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">Recent Activity</h2>
@@ -248,10 +238,8 @@
           </div>
         </div>
 
-        <!-- RIGHT COLUMN -->
         <div style="display:flex;flex-direction:column;gap:var(--sp-lg);">
 
-          <!-- QUICK ACTIONS -->
           <div class="card">
             <div class="card-header">
               <h2 class="card-title">Quick Actions</h2>
@@ -280,7 +268,6 @@
             </div>
           </div>
 
-          <!-- FAVORITE TOOLS -->
           <div class="card">
             <div class="card-header">
               <h2 class="card-title">Top Tools Used</h2>
@@ -318,7 +305,6 @@
         </div>
       </div>
 
-      <!-- KEYBOARD SHORTCUTS -->
       <div class="card animate-up animate-up-3">
         <div class="card-header">
           <h2 class="card-title">Keyboard Shortcuts</h2>
@@ -336,19 +322,19 @@
         </div>
       </div>
 
-    </div><!-- .page-content -->
+    </div>
   </main>
+</div>
 
-</div><!-- .app-shell -->
 <script src="../js/config.js"></script>
 <script src="../js/script.js"></script>
 <script>
   updateUserUI();
-  // Animate stat counters on load
   const targets = { 'stat-datasets': 47, 'stat-reports': 128, 'stat-sessions': 93 };
   Object.entries(targets).forEach(([id, target]) => {
     animateCounter(document.getElementById(id), target, 1200);
   });
 </script>
+
 </body>
 </html>
